@@ -6,7 +6,7 @@ Indian Legal Q&A System with RAG + Google Gemini
 import os
 import time
 from typing import List, Optional
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, HTTPException, APIRouter
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 from fastapi.responses import FileResponse
@@ -20,6 +20,8 @@ app = FastAPI(
     description="AI-powered legal assistant for Indian citizens using publicly available legal information",
     version="1.0.0"
 )
+
+api_router = APIRouter()
 
 # ─── CORS ────────────────────────────────────────────────────────────────────
 
@@ -109,7 +111,7 @@ async def serve_frontend():
     return {"message": "VakilBot API is running. Frontend not found."}
 
 
-@app.get("/health", response_model=HealthResponse)
+@api_router.get("/health", response_model=HealthResponse)
 async def health_check():
     """Health check endpoint."""
     try:
@@ -124,7 +126,7 @@ async def health_check():
         raise HTTPException(status_code=503, detail=f"Service unavailable: {str(e)}")
 
 
-@app.post("/chat", response_model=ChatResponse)
+@api_router.post("/chat", response_model=ChatResponse)
 async def chat(request: ChatRequest):
     """
     Main legal Q&A endpoint.
@@ -174,7 +176,7 @@ async def chat(request: ChatRequest):
         )
 
 
-@app.get("/categories")
+@api_router.get("/categories")
 async def get_categories():
     """Get available legal categories."""
     return {
@@ -192,7 +194,7 @@ async def get_categories():
     }
 
 
-@app.get("/sample-questions")
+@api_router.get("/sample-questions")
 async def get_sample_questions():
     """Get sample questions by category."""
     return {
@@ -213,7 +215,7 @@ async def get_sample_questions():
     }
 
 
-@app.post("/feedback")
+@api_router.post("/feedback")
 async def record_feedback(req: FeedbackRequest):
     """Save user feedback (thumbs up / down) to adapt answers."""
     try:
@@ -230,7 +232,7 @@ async def record_feedback(req: FeedbackRequest):
         raise HTTPException(status_code=500, detail=str(e))
 
 
-@app.post("/learn")
+@api_router.post("/learn")
 async def add_learned_insight(topic: str, insight: str):
     """Add a permanent learned insight to improve answers across users."""
     try:
@@ -240,6 +242,12 @@ async def add_learned_insight(topic: str, insight: str):
         return {"status": "success", "message": "Insight learned"}
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
+
+
+# Mount API router under both root and /api prefixes for full public/internal routing compatibility
+app.include_router(api_router)
+app.include_router(api_router, prefix="/api")
+
 
 
 if __name__ == "__main__":

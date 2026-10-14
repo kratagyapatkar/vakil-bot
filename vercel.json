@@ -1,25 +1,35 @@
 {
-  "version": 2,
+  "$schema": "https://openapi.vercel.sh/vercel.json",
+  "services": {
+    "app": {
+      "root": ".",
+      "framework": "fastapi",
+      "bindings": [
+        {
+          "type": "service",
+          "service": "backend",
+          "format": "url",
+          "env": "BACKEND_URL"
+        }
+      ]
+    },
+    "backend": {
+      "root": "backend",
+      "framework": "fastapi"
+    }
+  },
   "rewrites": [
     {
-      "source": "/(health|categories|sample-questions|chat|feedback|learn)",
-      "destination": "/api/index.py"
-    },
-    {
       "source": "/api/(.*)",
-      "destination": "/api/index.py"
-    },
-    {
-      "source": "/static/(.*)",
-      "destination": "/frontend/$1"
-    },
-    {
-      "source": "/",
-      "destination": "/frontend/index.html"
+      "destination": {
+        "service": "backend"
+      }
     },
     {
       "source": "/(.*)",
-      "destination": "/frontend/$1"
+      "destination": {
+        "service": "app"
+      }
     }
   ]
 }

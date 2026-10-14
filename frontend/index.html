@@ -1302,7 +1302,8 @@
 </div>
 
 <script>
-const API_BASE = window.location.origin;
+// Reconciled with public Vercel Services /api routing prefix
+const API_BASE = `${window.location.origin}/api`;
 let chatHistory = [];
 let isLoading = false;
 
