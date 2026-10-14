@@ -1,0 +1,24 @@
+{
+  "name": "legal-bot",
+  "version": "1.0.0",
+  "description": "An AI-powered legal assistant for Indian citizens, providing guidance on publicly available Indian laws using **RAG (Retrieval-Augmented Generation)** with **Google Gemini** and **ChromaDB**.",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/kratagyapatkar/vakil-bot.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "bugs": {
+    "url": "https://github.com/kratagyapatkar/vakil-bot/issues"
+  },
+  "homepage": "https://github.com/kratagyapatkar/vakil-bot#readme",
+  "dependencies": {
+    "@vercel/analytics": "^2.0.1"
+  }
+}

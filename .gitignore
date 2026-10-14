@@ -23,9 +23,14 @@ venv/
 .venv/
 env/
 
+# Dependencies
+node_modules/
+package-lock.json
+
 # IDE & OS
 .vscode/
 .idea/
 .DS_Store
 Thumbs.db
+
 
