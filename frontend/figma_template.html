@@ -1,0 +1,213 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>VakilBot — Figma Import Template</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --primary: #1a3a6b;
+      --primary-light: #2a5298;
+      --accent: #c9a84c;
+      --accent-light: #f0d080;
+      --bg: #f4f6fb;
+      --surface: #ffffff;
+      --surface2: #eef1f8;
+      --border: #dde3ef;
+      --text: #1c2333;
+      --text-muted: #6b7a99;
+      --user-bubble: #1a3a6b;
+      --user-text: #ffffff;
+      --bot-bubble: #ffffff;
+      --bot-text: #1c2333;
+      --shadow: 0 4px 24px rgba(26,58,107,0.10);
+      --radius: 16px;
+      --radius-sm: 10px;
+    }
+    html, body { height: 100%; font-family: 'Inter', sans-serif; background: var(--bg); color: var(--text); }
+    .app { display: flex; height: 100vh; overflow: hidden; width: 1440px; margin: 0 auto; box-shadow: 0 0 40px rgba(0,0,0,0.15); }
+    .sidebar { width: 300px; min-width: 300px; background: var(--primary); color: #fff; display: flex; flex-direction: column; }
+    .sidebar-header { padding: 28px 24px 20px; border-bottom: 1px solid rgba(255,255,255,0.1); }
+    .logo { display: flex; align-items: center; gap: 10px; margin-bottom: 4px; }
+    .logo-icon { font-size: 28px; }
+    .logo-text { font-size: 22px; font-weight: 700; color: var(--accent-light); }
+    .logo-sub { font-size: 12px; color: rgba(255,255,255,0.6); letter-spacing: 0.5px; }
+    .disclaimer { margin: 16px 24px; padding: 10px 12px; background: rgba(201,168,76,0.15); border-left: 3px solid var(--accent); border-radius: 6px; font-size: 11px; color: rgba(255,255,255,0.85); line-height: 1.5; }
+    .sidebar-section { padding: 16px 24px 8px; }
+    .sidebar-section-title { font-size: 10px; font-weight: 600; letter-spacing: 1px; text-transform: uppercase; color: rgba(255,255,255,0.45); margin-bottom: 10px; }
+    .category-btn { display: flex; align-items: center; gap: 10px; width: 100%; padding: 9px 12px; background: transparent; border: none; border-radius: 8px; color: rgba(255,255,255,0.85); font-size: 13px; font-family: inherit; margin-bottom: 2px; }
+    .category-btn.active { background: rgba(255,255,255,0.15); color: #fff; }
+    .category-btn .cat-emoji { font-size: 16px; width: 22px; text-align: center; }
+    .sample-questions { padding: 0 24px 20px; flex: 1; overflow-y: auto; }
+    .sample-q { display: block; width: 100%; padding: 8px 12px; margin-bottom: 6px; background: rgba(255,255,255,0.07); border: 1px solid rgba(255,255,255,0.12); border-radius: 8px; color: rgba(255,255,255,0.85); font-size: 12px; font-family: inherit; line-height: 1.4; }
+    .sidebar-footer { padding: 14px 24px; border-top: 1px solid rgba(255,255,255,0.1); font-size: 11px; color: rgba(255,255,255,0.5); text-align: center; }
+    .helpline-strip { background: rgba(201,168,76,0.25); padding: 8px 12px; border-radius: 6px; margin-bottom: 8px; font-size: 11px; color: var(--accent-light); font-weight: 500; }
+    .main { flex: 1; display: flex; flex-direction: column; overflow: hidden; background: var(--bg); }
+    .topbar { display: flex; align-items: center; justify-content: space-between; padding: 16px 28px; background: var(--surface); border-bottom: 1px solid var(--border); }
+    .topbar-title { font-weight: 700; font-size: 18px; color: var(--primary); }
+    .topbar-subtitle { font-size: 12px; color: var(--text-muted); display: flex; align-items: center; gap: 6px; }
+    .status-dot { width: 8px; height: 8px; border-radius: 50%; background: #22c55e; }
+    .btn-new-chat { padding: 8px 16px; border-radius: 8px; background: var(--primary); color: #fff; border: none; font-size: 13px; font-weight: 600; font-family: inherit; }
+    .messages { flex: 1; overflow-y: auto; padding: 24px 28px; display: flex; flex-direction: column; gap: 20px; }
+    .msg { display: flex; gap: 12px; max-width: 840px; }
+    .msg.user { flex-direction: row-reverse; align-self: flex-end; }
+    .msg.bot { align-self: flex-start; }
+    .avatar { width: 38px; height: 38px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 18px; flex-shrink: 0; }
+    .msg.user .avatar { background: var(--user-bubble); color: #fff; }
+    .msg.bot .avatar { background: var(--accent); color: var(--primary); }
+    .bubble { max-width: calc(100% - 60px); padding: 16px 20px; border-radius: var(--radius); line-height: 1.65; font-size: 14px; box-shadow: 0 2px 8px rgba(0,0,0,0.04); }
+    .msg.user .bubble { background: var(--user-bubble); color: var(--user-text); border-top-right-radius: 4px; }
+    .msg.bot .bubble { background: var(--bot-bubble); color: var(--bot-text); border: 1px solid var(--border); border-top-left-radius: 4px; }
+    .legal-card { background: var(--surface); border: 1px solid var(--border); border-left: 4px solid var(--primary-light); border-radius: 8px; padding: 14px 16px; margin: 12px 0; }
+    .legal-card.warning-card { border-left-color: #eab308; background: #fefce8; }
+    .legal-card.helpline-card { border-left-color: #22c55e; background: #f0fdf4; }
+    .legal-card.rights-card { border-left-color: var(--accent); background: #fdfaf3; }
+    .legal-card-title { font-size: 13px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; color: var(--primary); margin-bottom: 8px; display: flex; align-items: center; gap: 6px; }
+    .bubble ul { margin: 6px 0 10px 20px; }
+    .bubble ul li { margin-bottom: 6px; line-height: 1.5; }
+    .sources { margin-top: 14px; display: flex; flex-wrap: wrap; gap: 6px; padding-top: 8px; border-top: 1px dashed var(--border); }
+    .source-tag { font-size: 10px; padding: 4px 10px; border-radius: 20px; background: var(--surface2); color: var(--primary); border: 1px solid var(--border); font-weight: 600; }
+    .msg-actions { display: flex; align-items: center; gap: 8px; margin-top: 10px; padding-top: 8px; border-top: 1px dashed var(--border); }
+    .btn-tts { background: transparent; border: 1px solid var(--border); border-radius: 6px; padding: 4px 8px; font-size: 11px; font-weight: 500; color: var(--primary); display: inline-flex; align-items: center; gap: 5px; }
+    .feedback-group { display: inline-flex; align-items: center; gap: 4px; margin-left: auto; }
+    .btn-fb { background: transparent; border: 1px solid var(--border); border-radius: 6px; padding: 3px 8px; font-size: 11px; }
+    .input-area { padding: 16px 28px 20px; background: var(--surface); border-top: 1px solid var(--border); }
+    .input-wrap { display: flex; gap: 10px; align-items: center; background: var(--bg); border: 2px solid var(--border); border-radius: var(--radius); padding: 10px 14px; }
+    .input-mock { flex: 1; font-size: 14px; color: var(--text-muted); }
+    .btn-mic { width: 40px; height: 40px; border-radius: 10px; background: transparent; color: var(--primary); border: 1.5px solid var(--border); display: flex; align-items: center; justify-content: center; }
+    .btn-send { width: 40px; height: 40px; border-radius: 10px; background: var(--primary); color: #fff; border: none; display: flex; align-items: center; justify-content: center; }
+    .input-hint { font-size: 11px; color: var(--text-muted); margin-top: 8px; text-align: center; }
+  </style>
+</head>
+<body>
+<div class="app">
+  <!-- Sidebar Frame -->
+  <aside class="sidebar">
+    <div class="sidebar-header">
+      <div class="logo">
+        <span class="logo-icon">⚖️</span>
+        <span class="logo-text">VakilBot</span>
+      </div>
+      <div class="logo-sub">AI LEGAL ASSISTANT · INDIA</div>
+    </div>
+    <div class="disclaimer">
+      ⚠️ <strong>Disclaimer:</strong> General legal awareness based on public Indian law. Not a substitute for professional counsel.
+    </div>
+    <div class="sidebar-section">
+      <div class="sidebar-section-title">Legal Categories</div>
+      <div class="category-btn active"><span class="cat-emoji">⚖️</span> Fundamental Rights</div>
+      <div class="category-btn"><span class="cat-emoji">🔒</span> Criminal Law (BNS/IPC)</div>
+      <div class="category-btn"><span class="cat-emoji">👨‍👩‍👧</span> Family Law</div>
+      <div class="category-btn"><span class="cat-emoji">🛒</span> Consumer Law</div>
+      <div class="category-btn"><span class="cat-emoji">💻</span> Cyber Law</div>
+      <div class="category-btn"><span class="cat-emoji">👷</span> Labour Law</div>
+      <div class="category-btn"><span class="cat-emoji">🏠</span> Property Law</div>
+    </div>
+    <div class="sidebar-section">
+      <div class="sidebar-section-title">Quick Inquiries</div>
+      <div class="sample-q">Rights when arrested by police?</div>
+      <div class="sample-q">Procedure to file an online FIR?</div>
+      <div class="sample-q">How to file an RTI application?</div>
+    </div>
+    <div class="sidebar-footer">
+      <div class="helpline-strip">🆘 Police: 100 | Cyber: 1930 | NALSA: 15100</div>
+      Powered by Google Gemini · Indian Public Law
+    </div>
+  </aside>
+
+  <!-- Main Canvas -->
+  <main class="main">
+    <div class="topbar">
+      <div>
+        <div class="topbar-title">⚖️ VakilBot Assistant</div>
+        <div class="topbar-subtitle"><span class="status-dot"></span> Online · Active Intelligence Memory</div>
+      </div>
+      <button class="btn-new-chat">+ New Consultation</button>
+    </div>
+
+    <div class="messages">
+      <!-- User Message -->
+      <div class="msg user">
+        <div class="avatar">👤</div>
+        <div class="bubble">
+          What are my fundamental rights if police arrests me in India?
+        </div>
+      </div>
+
+      <!-- Bot Structured Response Message -->
+      <div class="msg bot">
+        <div class="avatar">⚖️</div>
+        <div class="bubble">
+          <div class="legal-card">
+            <div class="legal-card-title">📌 Summary & Overview</div>
+            <p>Under the Constitution of India and the Bharatiya Nagarik Suraksha Sanhita (BNSS) 2023, every arrested individual is entitled to mandatory procedural safeguards to protect personal liberty against arbitrary custody.</p>
+          </div>
+
+          <div class="legal-card">
+            <div class="legal-card-title">⚖️ Applicable Laws & Sections</div>
+            <ul>
+              <li><strong>Article 22, Constitution of India:</strong> Protection against arrest and detention.</li>
+              <li><strong>Section 173 BNSS:</strong> Mandatory registration of FIR for cognizable crimes.</li>
+              <li><strong>Section 47 BNSS:</strong> Mandatory duty of police to inform grounds of arrest and right to bail.</li>
+            </ul>
+          </div>
+
+          <div class="legal-card rights-card">
+            <div class="legal-card-title">🛡️ Your Core Constitutional Rights</div>
+            <ul>
+              <li><strong>Right to Know Grounds:</strong> Immediate notice of charges and offences alleged.</li>
+              <li><strong>Right to Consult an Advocate:</strong> Freedom to contact a lawyer of your choice.</li>
+              <li><strong>24-Hour Magistrate Rule:</strong> Must be presented before nearest Magistrate within 24 hours.</li>
+              <li><strong>Free Legal Aid:</strong> Access to legal counsel under Article 39A (NALSA).</li>
+            </ul>
+          </div>
+
+          <div class="legal-card helpline-card">
+            <div class="legal-card-title">📞 Immediate Helplines & Portals</div>
+            <ul>
+              <li><strong>National Legal Aid (NALSA):</strong> 15100 (Free lawyer assistance)</li>
+              <li><strong>Police Control Room:</strong> 112 / 100</li>
+              <li><strong>National Women Helpline:</strong> 1091</li>
+            </ul>
+          </div>
+
+          <div class="legal-card warning-card">
+            <div class="legal-card-title">⚠️ Important Disclaimer</div>
+            <p>This information is for general educational awareness. For criminal proceedings, consult a practicing High Court or Sessions Court advocate immediately.</p>
+          </div>
+
+          <div class="sources">
+            <span class="source-tag">📚 Constitution of India · Article 22</span>
+            <span class="source-tag">📚 BNSS 2023 · Sections 47, 173</span>
+            <span class="source-tag">📚 NALSA Legal Services Act 1987</span>
+          </div>
+
+          <div class="msg-actions">
+            <button class="btn-tts">🔊 Read Aloud</button>
+            <div class="feedback-group">
+              <span style="font-size:10px;color:var(--text-muted);">Helpful?</span>
+              <button class="btn-fb">👍</button>
+              <button class="btn-fb">👎</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Input Bar -->
+    <div class="input-area">
+      <div class="input-wrap">
+        <div class="input-mock">Ask your legal question in English or Hindi (e.g., 'What are my rights if police arrests me?')...</div>
+        <button class="btn-mic">🎙️</button>
+        <button class="btn-send">➤</button>
+      </div>
+      <div class="input-hint">Press Enter to send · Click 🎙️ to Speak · Shift+Enter for new line</div>
+    </div>
+  </main>
+</div>
+</body>
+</html>

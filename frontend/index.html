@@ -1,0 +1,2125 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
+  <title>VakilBot — Indian Legal Help Assistant</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
+  <style>
+    /* ── Reset & Base ─────────────────────────────────────────── */
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --primary: #132544;
+      --primary-light: #1f3a6b;
+      --accent: #d4a347;
+      --accent-light: #f3d489;
+      --bg: #f5f7fc;
+      --surface: #ffffff;
+      --surface2: #edf2f9;
+      --border: #dde4ee;
+      --text: #172033;
+      --text-muted: #64748b;
+      --user-bubble: #132544;
+      --user-text: #ffffff;
+      --bot-bubble: #ffffff;
+      --bot-text: #172033;
+      --shadow: 0 4px 20px rgba(19,37,68,0.06);
+      --radius: 14px;
+      --radius-sm: 10px;
+      --base-font-size: 14px;
+    }
+
+    /* ── Accessibility Themes ──────────────────────────────────── */
+    /* High Contrast Mode (WCAG AAA) */
+    body.theme-high-contrast {
+      --primary: #000000;
+      --primary-light: #111111;
+      --accent: #ffd700;
+      --accent-light: #ffff00;
+      --bg: #000000;
+      --surface: #121212;
+      --surface2: #1e1e1e;
+      --border: #ffff00;
+      --text: #ffffff;
+      --text-muted: #cccccc;
+      --user-bubble: #002244;
+      --user-text: #ffffff;
+      --bot-bubble: #121212;
+      --bot-text: #ffffff;
+    }
+    body.theme-high-contrast .legal-card {
+      border: 2px solid #ffffff !important;
+      background: #000000 !important;
+      color: #ffffff !important;
+    }
+    body.theme-high-contrast .legal-card-title {
+      color: #ffff00 !important;
+    }
+
+    /* Font Size Scalers */
+    body.font-large { --base-font-size: 16px; }
+    body.font-xlarge { --base-font-size: 19px; }
+
+    /* OpenDyslexic / Readability Font */
+    body.dyslexic-font {
+      font-family: 'Comic Sans MS', 'Trebuchet MS', 'Verdana', sans-serif !important;
+      letter-spacing: 0.05em;
+      word-spacing: 0.1em;
+      line-height: 1.8 !important;
+    }
+
+    /* ── Level Selector Tabs ─────────────────────────────────── */
+    .level-container {
+      margin-bottom: 20px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 8px;
+    }
+    .level-label {
+      font-size: 10.5px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.9px;
+      color: var(--text-muted);
+    }
+    .level-tabs {
+      display: inline-flex;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 24px;
+      padding: 3px;
+      gap: 3px;
+      box-shadow: 0 2px 8px rgba(19,37,68,0.04);
+    }
+    .level-tab {
+      padding: 6px 16px;
+      border: none;
+      background: transparent;
+      border-radius: 20px;
+      font-family: inherit;
+      font-size: 12.5px;
+      font-weight: 600;
+      color: var(--text-muted);
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      transition: all 0.2s ease;
+    }
+    .level-tab:hover {
+      color: var(--primary);
+      background: var(--surface2);
+    }
+    .level-tab.active {
+      background: var(--primary);
+      color: #ffffff;
+      box-shadow: 0 2px 8px rgba(19,37,68,0.18);
+    }
+
+    /* ── Interactive Legal Terminology Tooltip ──────────────── */
+    .legal-term {
+      position: relative;
+      cursor: help;
+      text-decoration: underline dotted var(--accent);
+      text-underline-offset: 3px;
+      color: var(--primary);
+      font-weight: 600;
+      transition: color 0.15s;
+    }
+    .legal-term:hover {
+      color: var(--accent);
+    }
+    .legal-term .term-tooltip {
+      visibility: hidden;
+      opacity: 0;
+      width: 250px;
+      background: #172033;
+      color: #ffffff;
+      text-align: left;
+      border-radius: 8px;
+      padding: 8px 12px;
+      position: absolute;
+      z-index: 1000;
+      bottom: 125%;
+      left: 50%;
+      transform: translateX(-50%) translateY(4px);
+      box-shadow: 0 4px 18px rgba(0,0,0,0.22);
+      border: 1px solid rgba(255,255,255,0.15);
+      font-size: 11px;
+      line-height: 1.45;
+      font-weight: 400;
+      pointer-events: none;
+      transition: opacity 0.2s, transform 0.2s, visibility 0.2s;
+    }
+    .legal-term .term-tooltip::after {
+      content: "";
+      position: absolute;
+      top: 100%;
+      left: 50%;
+      margin-left: -5px;
+      border-width: 5px;
+      border-style: solid;
+      border-color: #172033 transparent transparent transparent;
+    }
+    .legal-term:hover .term-tooltip {
+      visibility: visible;
+      opacity: 1;
+      transform: translateX(-50%) translateY(0);
+    }
+
+    html, body { height: 100%; font-family: 'Inter', sans-serif; font-size: var(--base-font-size); background: var(--bg); color: var(--text); }
+
+    /* ── Layout ───────────────────────────────────────────────── */
+    .app { display: flex; height: 100vh; overflow: hidden; }
+
+    /* ── Sidebar ──────────────────────────────────────────────── */
+    .sidebar {
+      width: 290px; min-width: 260px;
+      background: var(--primary);
+      color: #fff;
+      display: flex; flex-direction: column;
+      padding: 0;
+      transition: transform 0.3s;
+    }
+
+    .sidebar-header {
+      padding: 26px 22px 18px;
+      border-bottom: 1px solid rgba(255,255,255,0.08);
+    }
+
+    .logo { display: flex; align-items: center; gap: 10px; margin-bottom: 4px; }
+    .logo-icon { font-size: 24px; color: #82a8de; }
+    .logo-text { font-size: 20px; font-weight: 700; color: #ffffff; letter-spacing: -0.02em; }
+    .logo-sub { font-size: 10px; font-weight: 600; color: rgba(255,255,255,0.55); letter-spacing: 0.8px; }
+
+    .sidebar-section { padding: 14px 22px 6px; }
+    .sidebar-section-title {
+      font-size: 10px; font-weight: 700; letter-spacing: 1px;
+      text-transform: uppercase; color: rgba(255,255,255,0.45); margin-bottom: 8px;
+    }
+
+    .category-btn {
+      display: flex; align-items: center; gap: 10px;
+      width: 100%; padding: 8px 10px;
+      background: transparent; border: none; border-radius: 6px;
+      color: rgba(255,255,255,0.82); font-size: 12.5px; font-family: inherit;
+      cursor: pointer; text-align: left; transition: all 0.15s;
+      margin-bottom: 2px;
+    }
+    .category-btn:hover { background: rgba(255,255,255,0.10); color: #fff; }
+    .category-btn .cat-emoji { font-size: 15px; width: 20px; text-align: center; }
+
+    .sample-questions { padding: 0 18px 16px; flex: 1; overflow-y: auto; }
+    .sample-q {
+      display: block; width: 100%;
+      padding: 7px 10px; margin-bottom: 6px;
+      background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.10);
+      border-radius: 6px; color: rgba(255,255,255,0.85);
+      font-size: 11.5px; font-family: inherit;
+      cursor: pointer; text-align: left; transition: all 0.15s; line-height: 1.35;
+    }
+    .sample-q:hover { background: rgba(255,255,255,0.14); color: #fff; border-color: rgba(255,255,255,0.25); }
+
+    .sidebar-footer {
+      padding: 14px 18px;
+      border-top: 1px solid rgba(255,255,255,0.08);
+      font-size: 11px;
+      text-align: center;
+      background: transparent;
+    }
+    .helpline-strip {
+      background: #ffffff;
+      padding: 8px 10px; border-radius: 6px; margin-bottom: 6px;
+      font-size: 10.5px; color: #dc2626; font-weight: 600; text-align: center;
+      border: 1px solid rgba(220, 38, 38, 0.2);
+      box-shadow: 0 1px 3px rgba(0,0,0,0.08);
+    }
+    .powered-by {
+      font-size: 10px;
+      color: rgba(255, 255, 255, 0.45);
+    }
+
+    /* ── Main Chat Area ───────────────────────────────────────── */
+    .main { flex: 1; display: flex; flex-direction: column; overflow: hidden; position: relative; background: var(--bg); }
+
+    /* Top bar */
+    .topbar {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 12px 28px;
+      background: var(--surface);
+      border-bottom: 1px solid var(--border);
+      box-shadow: 0 1px 4px rgba(19,37,68,0.03);
+    }
+    .topbar-brand { display: flex; align-items: center; gap: 8px; }
+    .topbar-brand .brand-icon { font-size: 20px; color: var(--accent); }
+    .topbar-title { font-weight: 700; font-size: 17px; color: var(--accent); letter-spacing: -0.01em; }
+    .topbar-subtitle { font-size: 11px; color: var(--text-muted); display: flex; align-items: center; gap: 5px; margin-top: 1px; }
+    .status-dot { display: inline-block; width: 7px; height: 7px; border-radius: 50%; background: #22c55e; }
+    .topbar-right { display: flex; align-items: center; gap: 10px; }
+
+    .btn-new-chat {
+      padding: 7px 16px; border-radius: 8px;
+      background: var(--primary); color: #fff;
+      border: none; font-size: 12.5px; font-weight: 600; font-family: inherit;
+      cursor: pointer; transition: background 0.15s, transform 0.1s;
+    }
+    .btn-new-chat:hover { background: var(--primary-light); }
+    .btn-new-chat:active { transform: scale(0.97); }
+
+    /* Mobile toggle */
+    .btn-menu { display: none; background: none; border: none; font-size: 24px; cursor: pointer; color: var(--primary); }
+
+    /* Messages */
+    .messages {
+      flex: 1; overflow-y: auto; padding: 24px 28px 16px;
+      display: flex; flex-direction: column; gap: 18px;
+    }
+
+    .msg { display: flex; gap: 12px; max-width: 820px; }
+    .msg.user { flex-direction: row-reverse; align-self: flex-end; }
+    .msg.bot { align-self: flex-start; }
+
+    .avatar {
+      width: 36px; height: 36px; border-radius: 50%;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 16px; flex-shrink: 0; margin-top: 2px;
+    }
+    .msg.user .avatar { background: var(--user-bubble); color: #fff; }
+    .msg.bot .avatar { background: var(--accent); color: var(--primary); }
+
+    .bubble {
+      max-width: calc(100% - 54px);
+      padding: 14px 18px; border-radius: var(--radius);
+      line-height: 1.65; font-size: 13.5px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+    }
+    .msg.user .bubble {
+      background: var(--user-bubble); color: var(--user-text);
+      border-top-right-radius: 4px;
+    }
+    .msg.bot .bubble {
+      background: var(--bot-bubble); color: var(--bot-text);
+      border: 1px solid var(--border);
+      border-top-left-radius: 4px;
+    }
+    .bubble p { margin-bottom: 8px; }
+    .bubble p:last-child { margin-bottom: 0; }
+    .bubble strong { color: var(--primary); }
+    .msg.user .bubble strong { color: var(--accent-light); }
+    .bubble ul { margin: 6px 0 10px 20px; }
+    .bubble ul li { margin-bottom: 6px; line-height: 1.5; }
+    
+    /* Structured Legal Section Cards with Eye-Guiding Flow Animation */
+    .legal-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-left: 4px solid var(--primary-light);
+      border-radius: 8px;
+      padding: 14px 16px;
+      margin: 12px 0;
+      box-shadow: 0 1px 4px rgba(19,37,68,0.04);
+      opacity: 0;
+      transform: translateY(12px);
+      animation: cardReveal 0.45s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+      transition: transform 0.2s ease, box-shadow 0.2s ease;
+    }
+    .legal-card:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 4px 12px rgba(19,37,68,0.08);
+    }
+    @keyframes cardReveal {
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+    .msg.bot {
+      animation: msgFadeIn 0.35s ease-out;
+    }
+    @keyframes msgFadeIn {
+      from { opacity: 0; transform: translateY(8px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+    .legal-card.warning-card {
+      border-left-color: #eab308;
+      background: #fefce8;
+    }
+    .legal-card.helpline-card {
+      border-left-color: #22c55e;
+      background: #f0fdf4;
+    }
+    .legal-card.rights-card {
+      border-left-color: var(--accent);
+      background: #fdfaf3;
+    }
+    .legal-card-title {
+      font-size: 13px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      color: var(--primary);
+      margin-bottom: 8px;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    /* Sources badge */
+    .sources {
+      margin-top: 14px; display: flex; flex-wrap: wrap; gap: 6px; padding-top: 8px; border-top: 1px dashed var(--border);
+    }
+    .source-tag {
+      font-size: 10px; padding: 4px 10px; border-radius: 20px;
+      background: var(--surface2); color: var(--primary);
+      border: 1px solid var(--border); font-weight: 600;
+    }
+    .source-tag .cat-label { color: var(--text-muted); font-weight: normal; }
+
+    /* Typing indicator */
+    .typing-dots { display: flex; gap: 4px; align-items: center; padding: 4px 0; }
+    .typing-dots span {
+      width: 8px; height: 8px; border-radius: 50%;
+      background: var(--primary-light); opacity: 0.6;
+      animation: bounce 1.2s infinite;
+    }
+    .typing-dots span:nth-child(2) { animation-delay: 0.2s; }
+    .typing-dots span:nth-child(3) { animation-delay: 0.4s; }
+    @keyframes bounce { 0%,60%,100% { transform: translateY(0); } 30% { transform: translateY(-6px); } }
+
+    /* ── Input Area: Floating Pill with Navy Border (Figma Style) ── */
+    .input-area {
+      padding: 12px 28px 18px;
+      background: transparent;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      width: 100%;
+    }
+
+    .input-wrap {
+      display: flex; gap: 12px; align-items: center;
+      background: #ffffff;
+      border: 3px solid var(--primary);
+      border-radius: 36px;
+      padding: 8px 16px 8px 22px;
+      width: 100%;
+      max-width: 720px;
+      box-shadow: 0 4px 18px rgba(19,37,68,0.08);
+      transition: border-color 0.2s, box-shadow 0.2s;
+    }
+    .input-wrap:focus-within {
+      box-shadow: 0 6px 24px rgba(19,37,68,0.14);
+    }
+
+    #userInput {
+      flex: 1; border: none; background: transparent;
+      font-family: inherit; font-size: 13.5px; color: var(--text);
+      resize: none; outline: none; max-height: 120px; min-height: 22px;
+      line-height: 1.5;
+    }
+    #userInput::placeholder { color: #8c9bb5; }
+
+    .btn-send {
+      width: 36px; height: 36px; border-radius: 50%;
+      background: var(--primary); color: #fff;
+      border: none; cursor: pointer; font-size: 15px;
+      display: flex; align-items: center; justify-content: center;
+      transition: background 0.15s, transform 0.1s; flex-shrink: 0;
+    }
+    .btn-send:hover { background: var(--primary-light); }
+    .btn-send:active { transform: scale(0.94); }
+    .btn-send:disabled { background: var(--border); cursor: not-allowed; }
+
+    /* Voice / Microphone Button */
+    .btn-mic {
+      width: 36px; height: 36px; border-radius: 50%;
+      background: transparent; color: var(--primary);
+      border: none; cursor: pointer; font-size: 18px;
+      display: flex; align-items: center; justify-content: center;
+      transition: all 0.2s ease; flex-shrink: 0;
+    }
+    .btn-mic:hover {
+      background: var(--surface2);
+    }
+    .btn-mic.recording {
+      background: #ef4444 !important;
+      color: #fff !important;
+      animation: micPulse 1.2s infinite;
+    }
+    @keyframes micPulse {
+      0% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.5); }
+      70% { box-shadow: 0 0 0 10px rgba(239, 68, 68, 0); }
+      100% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0); }
+    }
+
+    /* TTS Audio Read-Aloud Button */
+    .btn-tts {
+      background: transparent;
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      padding: 4px 8px;
+      font-size: 11px;
+      font-weight: 500;
+      color: var(--primary);
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      margin-top: 8px;
+      transition: all 0.15s;
+    }
+    .btn-tts:hover {
+      background: var(--surface2);
+      border-color: var(--primary-light);
+    }
+    .btn-tts.speaking {
+      background: var(--primary);
+      color: #fff;
+    }
+
+    /* Actions bar with Feedback Buttons */
+    .msg-actions {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-top: 10px;
+      padding-top: 8px;
+      border-top: 1px dashed var(--border);
+    }
+    .feedback-group {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      margin-left: auto;
+    }
+    .btn-fb {
+      background: transparent;
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      padding: 3px 8px;
+      font-size: 11px;
+      cursor: pointer;
+      transition: all 0.15s;
+    }
+    .btn-fb:hover {
+      background: var(--surface2);
+      border-color: var(--primary-light);
+    }
+    .btn-fb.active {
+      background: var(--primary-light);
+      color: #fff;
+      border-color: var(--primary);
+    }
+
+    .input-hint { font-size: 11px; color: var(--text-muted); margin-top: 8px; text-align: center; }
+
+    /* Centered Bottom Disclaimer Card (Figma Design) */
+    .disclaimer-card {
+      max-width: 530px;
+      width: 90%;
+      background: #fdf8eb;
+      border: 1px solid #f6e8c7;
+      border-left: 4px solid var(--accent);
+      border-radius: 6px;
+      padding: 9px 14px;
+      font-size: 11px;
+      line-height: 1.45;
+      color: #78521a;
+      text-align: left;
+      margin-top: 10px;
+      box-shadow: 0 1px 3px rgba(19,37,68,0.03);
+    }
+    .disclaimer-card strong {
+      color: #633f0a;
+    }
+
+    /* ── Welcome screen (Desktop Base) ────────────────────────── */
+    .welcome {
+      display: flex; flex-direction: column; align-items: center;
+      justify-content: center; flex: 1; padding: 30px 20px 20px;
+      text-align: center; gap: 16px;
+    }
+    .welcome-icon { font-size: 50px; line-height: 1; margin-bottom: 2px; }
+    .welcome h2 { font-size: 24px; color: var(--primary); font-weight: 700; letter-spacing: -0.01em; }
+    .welcome p { color: var(--text-muted); max-width: 520px; line-height: 1.6; font-size: 13.5px; }
+
+    .quick-cards {
+      display: grid; grid-template-columns: repeat(2, 1fr);
+      gap: 12px; max-width: 560px; width: 100%;
+    }
+    .quick-card {
+      padding: 13px 16px; border-radius: 8px;
+      background: var(--surface); border: 1px solid var(--border);
+      cursor: pointer; text-align: left; transition: all 0.15s ease;
+      font-family: inherit; box-shadow: 0 1px 3px rgba(0,0,0,0.02);
+    }
+    .quick-card:hover { border-color: var(--primary-light); box-shadow: 0 4px 14px rgba(19,37,68,0.08); transform: translateY(-1px); }
+    .quick-card .card-emoji { font-size: 20px; margin-bottom: 6px; display: block; }
+    .quick-card .card-text { font-size: 12.5px; color: var(--text); font-weight: 500; line-height: 1.4; }
+
+    /* ── Scrollbar ────────────────────────────────────────────── */
+    ::-webkit-scrollbar { width: 6px; height: 6px; }
+    ::-webkit-scrollbar-track { background: transparent; }
+    ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+
+    /* ── Responsive & Device Adaptation (Tablet & Mobile) ────────── */
+    
+    /* Overlay for mobile/tablet drawer */
+    .overlay {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(19, 37, 68, 0.45);
+      backdrop-filter: blur(3px);
+      -webkit-backdrop-filter: blur(3px);
+      z-index: 99;
+      opacity: 0;
+      transition: opacity 0.25s ease;
+    }
+    .overlay.show {
+      display: block;
+      opacity: 1;
+    }
+
+    /* Sidebar Close Button */
+    .sidebar-close-btn {
+      display: none;
+      background: rgba(255, 255, 255, 0.12);
+      border: none;
+      color: #ffffff;
+      width: 32px;
+      height: 32px;
+      border-radius: 50%;
+      cursor: pointer;
+      align-items: center;
+      justify-content: center;
+      font-size: 15px;
+      font-weight: 600;
+      transition: background 0.15s;
+    }
+    .sidebar-close-btn:hover, .sidebar-close-btn:active {
+      background: rgba(255, 255, 255, 0.22);
+    }
+
+    /* Mobile settings button on Topbar */
+    .btn-mobile-settings {
+      display: none;
+      align-items: center;
+      gap: 5px;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 6px 10px;
+      font-size: 12px;
+      font-family: inherit;
+      color: var(--text);
+      cursor: pointer;
+      font-weight: 600;
+      transition: background 0.15s;
+    }
+    .btn-mobile-settings:hover, .btn-mobile-settings:active {
+      background: var(--surface2);
+      border-color: var(--primary-light);
+    }
+
+    .btn-new-icon { display: none; }
+    .btn-new-text { display: inline; }
+
+    /* Mobile Settings Drawer / Sheet */
+    .mobile-sheet-overlay {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(19, 37, 68, 0.5);
+      backdrop-filter: blur(3px);
+      -webkit-backdrop-filter: blur(3px);
+      z-index: 1099;
+      opacity: 0;
+      transition: opacity 0.25s ease;
+    }
+    .mobile-sheet-overlay.show {
+      display: block;
+      opacity: 1;
+    }
+    .mobile-sheet {
+      position: fixed;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      background: var(--surface);
+      border-top: 3px solid var(--accent);
+      border-radius: 20px 20px 0 0;
+      box-shadow: 0 -8px 32px rgba(19, 37, 68, 0.25);
+      padding: 14px 20px max(20px, env(safe-area-inset-bottom));
+      z-index: 1100;
+      transform: translateY(105%);
+      transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+      max-width: 520px;
+      margin: 0 auto;
+    }
+    .mobile-sheet.open {
+      transform: translateY(0);
+    }
+    .sheet-handle {
+      width: 44px;
+      height: 4px;
+      border-radius: 2px;
+      background: var(--border);
+      margin: 0 auto 12px;
+    }
+    .sheet-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 16px;
+    }
+    .sheet-title {
+      font-size: 15px;
+      font-weight: 700;
+      color: var(--primary);
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .sheet-close {
+      background: var(--surface2);
+      border: none;
+      width: 30px;
+      height: 30px;
+      border-radius: 50%;
+      font-size: 14px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: var(--text-muted);
+      font-weight: 600;
+    }
+    .sheet-section {
+      margin-bottom: 16px;
+    }
+    .sheet-label {
+      display: block;
+      font-size: 10.5px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.8px;
+      color: var(--text-muted);
+      margin-bottom: 6px;
+    }
+    .sheet-select {
+      width: 100%;
+      padding: 10px 14px;
+      border-radius: 10px;
+      border: 1px solid var(--border);
+      background: var(--surface2);
+      color: var(--text);
+      font-family: inherit;
+      font-size: 13.5px;
+      font-weight: 600;
+      outline: none;
+      cursor: pointer;
+    }
+    .sheet-tools-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 8px;
+    }
+    .sheet-tool-btn {
+      padding: 10px 6px;
+      border-radius: 10px;
+      border: 1px solid var(--border);
+      background: var(--surface2);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 4px;
+      cursor: pointer;
+      font-family: inherit;
+      color: var(--text);
+      transition: all 0.15s;
+    }
+    .sheet-tool-btn:hover, .sheet-tool-btn:active {
+      border-color: var(--primary-light);
+      background: var(--surface);
+    }
+    .sheet-tool-btn .tool-icon {
+      font-size: 16px;
+      font-weight: 700;
+      color: var(--primary);
+    }
+    .sheet-tool-btn .tool-name {
+      font-size: 10.5px;
+      color: var(--text-muted);
+    }
+
+    /* Terminology Popover / Bottom Sheet for Touch Devices */
+    .term-sheet {
+      position: fixed;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      background: var(--surface);
+      border-top: 3px solid var(--accent);
+      border-radius: 16px 16px 0 0;
+      box-shadow: 0 -6px 28px rgba(19, 37, 68, 0.22);
+      padding: 16px 20px max(18px, env(safe-area-inset-bottom));
+      z-index: 1150;
+      transform: translateY(110%);
+      transition: transform 0.28s cubic-bezier(0.16, 1, 0.3, 1);
+      max-width: 520px;
+      margin: 0 auto;
+    }
+    .term-sheet.open {
+      transform: translateY(0);
+    }
+    .term-sheet-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 8px;
+    }
+    .term-sheet-title {
+      font-weight: 700;
+      font-size: 14.5px;
+      color: var(--primary);
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .term-sheet-close {
+      background: var(--surface2);
+      border: none;
+      width: 28px;
+      height: 28px;
+      border-radius: 50%;
+      font-size: 13px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: var(--text-muted);
+    }
+    .term-sheet-def {
+      font-size: 12.5px;
+      line-height: 1.55;
+      color: var(--text);
+    }
+
+    /* Responsive Level Tabs Text */
+    .tab-short { display: none; }
+    .tab-long { display: inline; }
+
+    /* ── TABLET BREAKPOINT (768px to 1024px) ──────────────────────── */
+    @media (min-width: 768px) and (max-width: 1024px) {
+      .sidebar {
+        position: fixed;
+        left: 0;
+        top: 0;
+        bottom: 0;
+        z-index: 100;
+        transform: translateX(-100%);
+        box-shadow: 4px 0 24px rgba(0,0,0,0.18);
+        width: 320px;
+      }
+      .sidebar.open {
+        transform: translateX(0);
+      }
+      .sidebar-close-btn {
+        display: flex;
+      }
+      .btn-menu {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        width: 38px;
+        height: 38px;
+        border-radius: 8px;
+        background: var(--surface2);
+        color: var(--primary);
+        font-size: 20px;
+        border: none;
+        cursor: pointer;
+      }
+      .topbar {
+        padding: 12px 20px;
+      }
+      .topbar-subtitle {
+        max-width: none;
+      }
+      .messages {
+        padding: 20px 24px 14px;
+      }
+      .welcome {
+        padding: 28px 24px;
+        gap: 16px;
+      }
+      .welcome-icon { font-size: 46px; }
+      .welcome h2 { font-size: 23px; }
+      .welcome p { font-size: 13.5px; max-width: 540px; }
+      .quick-cards {
+        grid-template-columns: repeat(2, 1fr);
+        gap: 12px;
+        max-width: 620px;
+      }
+      .quick-card {
+        padding: 14px 18px;
+      }
+      .input-wrap {
+        max-width: 640px;
+        padding: 8px 16px 8px 20px;
+      }
+      .disclaimer-card {
+        max-width: 540px;
+      }
+    }
+
+    /* ── MOBILE BREAKPOINT (<= 767px) ─────────────────────────────── */
+    @media (max-width: 767px) {
+      html, body, .app {
+        height: 100%;
+        height: 100dvh;
+      }
+      .sidebar {
+        position: fixed;
+        left: 0;
+        top: 0;
+        bottom: 0;
+        width: 86vw;
+        max-width: 330px;
+        z-index: 100;
+        transform: translateX(-100%);
+        box-shadow: 6px 0 28px rgba(0,0,0,0.25);
+      }
+      .sidebar.open {
+        transform: translateX(0);
+      }
+      .sidebar-close-btn {
+        display: flex;
+      }
+      .btn-menu {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        width: 36px;
+        height: 36px;
+        font-size: 20px;
+        border-radius: 8px;
+        background: var(--surface2);
+        color: var(--primary);
+        flex-shrink: 0;
+        border: none;
+        cursor: pointer;
+      }
+
+      /* Topbar restructuring */
+      .topbar {
+        padding: 10px 14px;
+        gap: 8px;
+      }
+      .topbar-brand {
+        gap: 6px;
+      }
+      .topbar-title {
+        font-size: 15.5px;
+      }
+      .topbar-subtitle {
+        font-size: 10px;
+        max-width: 100px;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+      }
+      .topbar-right {
+        gap: 6px;
+      }
+      .topbar-lang-wrap, .topbar-a11y-wrap {
+        display: none !important;
+      }
+      .btn-mobile-settings {
+        display: flex;
+      }
+      .btn-new-chat {
+        padding: 6px 12px;
+        font-size: 11.5px;
+        border-radius: 6px;
+      }
+      .btn-new-text { display: none; }
+      .btn-new-icon { display: inline; }
+
+      /* Welcome Screen restructuring */
+      .welcome {
+        padding: 16px 14px 10px;
+        gap: 12px;
+        justify-content: flex-start;
+      }
+      .welcome-icon { font-size: 38px; margin-bottom: 0; }
+      .welcome h2 { font-size: 20px; }
+      .welcome p { font-size: 12px; line-height: 1.5; max-width: 95%; }
+
+      /* Level selector */
+      .level-container {
+        margin-bottom: 10px;
+        gap: 6px;
+      }
+      .level-label {
+        font-size: 9.5px;
+        letter-spacing: 0.6px;
+      }
+      .level-tabs {
+        width: 100%;
+        max-width: 340px;
+        padding: 2px;
+        gap: 2px;
+      }
+      .level-tab {
+        flex: 1;
+        justify-content: center;
+        padding: 6px 6px;
+        font-size: 11px;
+        gap: 4px;
+      }
+      .tab-short { display: inline; }
+      .tab-long { display: none; }
+
+      /* Quick cards: compact 2-column grid */
+      .quick-cards {
+        grid-template-columns: repeat(2, 1fr);
+        gap: 8px;
+        max-width: 100%;
+        width: 100%;
+      }
+      .quick-card {
+        padding: 9px 11px;
+        min-height: 52px;
+        border-radius: 8px;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+      }
+      .quick-card .card-emoji {
+        font-size: 16px;
+        margin-bottom: 3px;
+      }
+      .quick-card .card-text {
+        font-size: 11px;
+        line-height: 1.3;
+      }
+
+      /* Messages area */
+      .messages {
+        padding: 14px 12px 10px;
+        gap: 14px;
+      }
+      .msg {
+        max-width: 100%;
+        gap: 8px;
+      }
+      .avatar {
+        width: 30px;
+        height: 30px;
+        font-size: 13px;
+      }
+      .bubble {
+        padding: 10px 14px;
+        font-size: 13px;
+        max-width: calc(100% - 38px);
+      }
+      .legal-card {
+        padding: 10px 12px;
+        margin: 8px 0;
+      }
+      .legal-card-title {
+        font-size: 11.5px;
+      }
+
+      /* Input Dock restructuring */
+      .input-area {
+        padding: 8px 12px calc(8px + env(safe-area-inset-bottom, 0px));
+        background: var(--surface);
+        border-top: 1px solid var(--border);
+        box-shadow: 0 -2px 10px rgba(19, 37, 68, 0.04);
+      }
+      .input-wrap {
+        border-width: 2.5px;
+        border-radius: 26px;
+        padding: 5px 8px 5px 14px;
+        width: 100%;
+        max-width: 100%;
+        box-shadow: none;
+      }
+      #userInput {
+        font-size: 14px;
+        min-height: 20px;
+        line-height: 1.4;
+      }
+      .btn-mic, .btn-send {
+        width: 34px;
+        height: 34px;
+        font-size: 14px;
+      }
+      .disclaimer-card {
+        max-width: 100%;
+        width: 100%;
+        font-size: 9.5px;
+        line-height: 1.35;
+        padding: 6px 10px;
+        margin-top: 6px;
+        border-left-width: 3px;
+      }
+    }
+
+    /* ── Extra Small Smartphones (<= 380px) ───────────────────────── */
+    @media (max-width: 380px) {
+      .topbar-title { font-size: 14px; }
+      .topbar-subtitle { display: none; }
+      .btn-new-chat { padding: 5px 9px; font-size: 11px; }
+      .level-tab { font-size: 10px; padding: 5px 2px; }
+      .quick-card .card-text { font-size: 10px; }
+    }
+  </style>
+</head>
+<body>
+<div class="app">
+
+  <!-- ── Sidebar ──────────────────────────────────────────────── -->
+  <aside class="sidebar" id="sidebar">
+    <div class="sidebar-header">
+      <div style="display:flex;align-items:center;justify-content:space-between;width:100%;">
+        <div class="logo">
+          <span class="logo-icon">⚖️</span>
+          <span class="logo-text">VakilBot</span>
+        </div>
+        <button type="button" class="sidebar-close-btn" onclick="toggleSidebar()" aria-label="Close sidebar">✕</button>
+      </div>
+      <div class="logo-sub">AI LEGAL BOT · FOR INDIA · FROM INDIA</div>
+    </div>
+
+    <div class="sidebar-section">
+      <div class="sidebar-section-title">Legal Categories</div>
+    </div>
+    <div id="categoriesList" style="padding: 0 12px;"></div>
+
+    <div class="sidebar-section" style="margin-top:8px;">
+      <div class="sidebar-section-title">Quick Questions</div>
+    </div>
+    <div class="sample-questions" id="sampleQuestions"></div>
+
+    <div class="sidebar-footer">
+      <div class="helpline-strip">🆘 Emergency: 100 | Women: 1091 | Cyber: 1930 | Legal Aid: 15100</div>
+      <div class="powered-by">Powered by Google</div>
+    </div>
+  </aside>
+
+  <!-- Mobile overlay -->
+  <div class="overlay" id="overlay" onclick="toggleSidebar()"></div>
+
+  <!-- ── Main ─────────────────────────────────────────────────── -->
+  <main class="main">
+
+    <!-- Top Bar -->
+    <div class="topbar">
+      <div style="display:flex;align-items:center;gap:12px;">
+        <button class="btn-menu" onclick="toggleSidebar()" aria-label="Open navigation menu">☰</button>
+        <div class="topbar-brand">
+          <div class="topbar-title">⚖️ VakilBot</div>
+          <div class="topbar-subtitle"><span class="status-dot" id="statusDot"></span><span id="statusText">Connecting...</span></div>
+        </div>
+      </div>
+      <div class="topbar-right">
+        <!-- Desktop/Tablet Language Selector -->
+        <div class="topbar-lang-wrap" style="display:flex;align-items:center;gap:6px;">
+          <span style="font-size:14px;">🌐</span>
+          <select id="langSelect" onchange="onLanguageChange(this.value)" style="padding:6px 10px;border-radius:8px;border:1px solid var(--border);background:var(--surface);color:var(--text);font-family:inherit;font-size:12px;font-weight:600;outline:none;cursor:pointer;">
+            <optgroup label="🇮🇳 Indian Languages">
+              <option value="en" selected>English (India)</option>
+              <option value="hi">हिंदी (Hindi)</option>
+              <option value="ta">தமிழ் (Tamil)</option>
+              <option value="te">తెలుగు (Telugu)</option>
+              <option value="bn">বাংলা (Bengali)</option>
+              <option value="mr">मराठी (Marathi)</option>
+              <option value="gu">ગુજરાતી (Gujarati)</option>
+              <option value="kn">ಕನ್ನಡ (Kannada)</option>
+              <option value="ml">മലയാളം (Malayalam)</option>
+              <option value="pa">ਪੰਜਾਬੀ (Punjabi)</option>
+            </optgroup>
+            <optgroup label="🌍 International Languages">
+              <option value="es">Español (Spanish)</option>
+              <option value="fr">Français (French)</option>
+              <option value="de">Deutsch (German)</option>
+              <option value="ar">العربية (Arabic)</option>
+              <option value="ru">Русский (Russian)</option>
+              <option value="zh">中文 (Mandarin)</option>
+            </optgroup>
+          </select>
+        </div>
+
+        <!-- Desktop/Tablet Accessibility Toolbar -->
+        <div class="topbar-a11y-wrap" style="display:flex;align-items:center;gap:4px;border:1px solid var(--border);border-radius:8px;padding:2px 4px;background:var(--surface);">
+          <button type="button" onclick="cycleFontSize()" title="Adjust Text Size" style="background:none;border:none;cursor:pointer;font-size:12px;font-weight:bold;color:var(--text);padding:4px 6px;">A<span style="font-size:10px;">±</span></button>
+          <button type="button" onclick="toggleHighContrast()" title="Toggle High Contrast (WCAG)" style="background:none;border:none;cursor:pointer;font-size:13px;padding:4px 6px;">🌓</button>
+          <button type="button" onclick="toggleDyslexicFont()" title="Dyslexia Friendly Font" style="background:none;border:none;cursor:pointer;font-size:11px;font-weight:700;color:var(--text);padding:4px 6px;">Aa</button>
+        </div>
+
+        <!-- Mobile Quick Settings Trigger -->
+        <button type="button" class="btn-mobile-settings" onclick="toggleMobileSettings()" title="Settings & Language">
+          <span>🌐</span><span id="mobileLangBadge">EN</span>
+        </button>
+
+        <button class="btn-new-chat" onclick="newChat()">
+          <span class="btn-new-text">+ New Chat</span>
+          <span class="btn-new-icon">+ New</span>
+        </button>
+      </div>
+    </div>
+
+    <!-- Messages container -->
+    <div class="messages" id="messages">
+      <!-- Welcome screen shown initially -->
+      <div class="welcome" id="welcomeScreen">
+        <div class="welcome-icon">🏛️</div>
+        <h2>Namaste! I'm VakilBot</h2>
+        <p>Your AI-powered Indian legal assistant. I can help you understand your rights, explain laws, and guide you through legal processes — all based on publicly available Indian law.</p>
+
+        <!-- Complexity Level Selection Tabs -->
+        <div class="level-container">
+          <div class="level-label">Select Your Knowledge Level:</div>
+          <div class="level-tabs" role="tablist">
+            <button type="button" class="level-tab active" data-level="new" onclick="selectLevel('new')" title="Plain words, everyday analogies, no legal jargon">
+              🌱 New <span class="tab-long">to Law</span>
+            </button>
+            <button type="button" class="level-tab" data-level="intermediate" onclick="selectLevel('intermediate')" title="Standard procedures, practical rights and filing steps">
+              ⚖️ <span class="tab-short">Medium</span><span class="tab-long">Intermediate</span>
+            </button>
+            <button type="button" class="level-tab" data-level="expert" onclick="selectLevel('expert')" title="Statutory sections, case precedents and judicial definitions">
+              🎓 Expert <span class="tab-long">/ Adv.</span>
+            </button>
+          </div>
+        </div>
+
+        <div class="quick-cards" id="quickCards"></div>
+      </div>
+    </div>
+
+    <!-- Input Area -->
+    <div class="input-area">
+      <div class="input-wrap">
+        <textarea
+          id="userInput"
+          placeholder="Ask your legal question in English or Hindi (e.g., 'What are my rights if police arrests me?')"
+          rows="1"
+          onkeydown="handleKeyDown(event)"
+          oninput="autoResize(this)"
+        ></textarea>
+        <button type="button" class="btn-mic" id="micBtn" onclick="toggleSpeechRecognition()" title="Speak your question">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3Z"></path>
+            <path d="M19 10v2a7 7 0 0 1-14 0v-2"></path>
+            <line x1="12" y1="19" x2="12" y2="22"></line>
+          </svg>
+        </button>
+        <button class="btn-send" id="sendBtn" onclick="sendMessage()" title="Send">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+            <line x1="22" y1="2" x2="11" y2="13"></line>
+            <polygon points="22 2 15 22 11 13 2 9 22 2"></polygon>
+          </svg>
+        </button>
+      </div>
+      <div class="disclaimer-card">
+        ⚠️ <strong>Disclaimer:</strong> This bot provides general legal information based on publicly available Indian laws. It is not a substitute for professional legal advice. For serious matters, consult a qualified lawyer.
+      </div>
+    </div>
+</div>
+
+<!-- Mobile Settings & Language Sheet -->
+<div class="mobile-sheet-overlay" id="mobileSettingsOverlay" onclick="toggleMobileSettings()"></div>
+<div class="mobile-sheet" id="mobileSettingsSheet">
+  <div class="sheet-handle"></div>
+  <div class="sheet-header">
+    <div class="sheet-title">⚙️ Preferences & Accessibility</div>
+    <button type="button" class="sheet-close" onclick="toggleMobileSettings()" aria-label="Close settings">✕</button>
+  </div>
+  <div class="sheet-content">
+    <div class="sheet-section">
+      <label class="sheet-label">Target Language / भाषा / மொழி</label>
+      <select id="mobileLangSelect" onchange="onLanguageChange(this.value)" class="sheet-select">
+        <optgroup label="🇮🇳 Indian Languages">
+          <option value="en" selected>English (India)</option>
+          <option value="hi">हिंदी (Hindi)</option>
+          <option value="ta">தமிழ் (Tamil)</option>
+          <option value="te">తెలుగు (Telugu)</option>
+          <option value="bn">বাংলা (Bengali)</option>
+          <option value="mr">मराठी (Marathi)</option>
+          <option value="gu">ગુજરાતી (Gujarati)</option>
+          <option value="kn">ಕನ್ನಡ (Kannada)</option>
+          <option value="ml">മലയാളം (Malayalam)</option>
+          <option value="pa">ਪੰਜਾਬੀ (Punjabi)</option>
+        </optgroup>
+        <optgroup label="🌍 International Languages">
+          <option value="es">Español (Spanish)</option>
+          <option value="fr">Français (French)</option>
+          <option value="de">Deutsch (German)</option>
+          <option value="ar">العربية (Arabic)</option>
+          <option value="ru">Русский (Russian)</option>
+          <option value="zh">中文 (Mandarin)</option>
+        </optgroup>
+      </select>
+    </div>
+    <div class="sheet-section">
+      <label class="sheet-label">Accessibility Options</label>
+      <div class="sheet-tools-grid">
+        <button type="button" class="sheet-tool-btn" onclick="cycleFontSize()">
+          <span class="tool-icon">A±</span>
+          <span class="tool-name">Text Size</span>
+        </button>
+        <button type="button" class="sheet-tool-btn" onclick="toggleHighContrast()">
+          <span class="tool-icon">🌓</span>
+          <span class="tool-name">High Contrast</span>
+        </button>
+        <button type="button" class="sheet-tool-btn" onclick="toggleDyslexicFont()">
+          <span class="tool-icon">Aa</span>
+          <span class="tool-name">Dyslexia Font</span>
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Mobile Touch Legal Term Sheet -->
+<div class="term-sheet" id="termSheet">
+  <div class="term-sheet-header">
+    <div class="term-sheet-title">
+      <span>📖</span>
+      <span id="termSheetTitle">Legal Term</span>
+    </div>
+    <button type="button" class="term-sheet-close" onclick="closeTermSheet()" aria-label="Close term definition">✕</button>
+  </div>
+  <div id="termSheetDef" class="term-sheet-def">Definition text goes here</div>
+</div>
+
+<script>
+const API_BASE = window.location.origin;
+let chatHistory = [];
+let isLoading = false;
+
+// Persistent User ID to remember topics and prevent repetition over time
+let currentUserId = localStorage.getItem('vakilbot_user_id');
+if (!currentUserId) {
+  currentUserId = 'user_' + Math.random().toString(36).substring(2, 10);
+  localStorage.setItem('vakilbot_user_id', currentUserId);
+}
+
+// Active language state (default: English)
+let selectedLanguage = localStorage.getItem('vakilbot_lang') || 'en';
+
+// Active User Experience Level (new, intermediate, expert)
+let selectedLevel = localStorage.getItem('vakilbot_level') || 'new';
+
+// Comprehensive Legal Terminology Glossary for Hover Tooltips
+const LEGAL_GLOSSARY = {
+  "FIR": "First Information Report: The initial written document prepared by police when they receive information about a cognizable offence.",
+  "Cognizable": "Serious offences where police have the legal authority to arrest an accused person without an arrest warrant from a Magistrate.",
+  "Non-Cognizable": "Offences where police cannot arrest without a magistrate warrant and cannot investigate without court permission.",
+  "Bail": "The temporary legal release of an accused person awaiting trial upon providing security or personal bond.",
+  "Anticipatory Bail": "A pre-arrest legal remedy granted under BNSS Section 482 / CrPC 438 when a person apprehends imminent arrest.",
+  "Magistrate": "A judicial judicial officer presiding over a lower court of criminal or civil jurisdiction.",
+  "Article 21": "Constitutional protection of life and personal liberty, which cannot be taken away except by procedure established by law.",
+  "Article 14": "Constitutional guarantee of equality before the law and equal protection of the laws across India.",
+  "Article 22": "Constitutional protections upon arrest: mandatory notice of grounds, legal counsel, and 24-hr magistrate production.",
+  "Article 32": "Direct constitutional right to move the Supreme Court of India via Writs for enforcement of fundamental rights.",
+  "Article 39A": "Constitutional directive guaranteeing equal justice and free legal aid to underprivileged citizens.",
+  "Habeas Corpus": "A prerogative writ issued by a High Court or Supreme Court ordering a detained person to be produced to examine detention legality.",
+  "Mandamus": "A judicial writ commanding a public authority or government body to perform a mandatory statutory duty.",
+  "BNS": "Bharatiya Nyaya Sanhita 2023: The comprehensive penal code governing criminal offences and punishments in India (replaced IPC).",
+  "BNSS": "Bharatiya Nagarik Suraksha Sanhita 2023: The procedural statute governing arrest, bail, investigation, and trial in India (replaced CrPC).",
+  "IPC": "Indian Penal Code 1860: India's historic criminal code, replaced by the Bharatiya Nyaya Sanhita (BNS) on 1 July 2024.",
+  "CrPC": "Code of Criminal Procedure 1973: Replaced by the Bharatiya Nagarik Suraksha Sanhita (BNSS) on 1 July 2024.",
+  "NALSA": "National Legal Services Authority: Apex statutory body providing free legal counsel and services to eligible citizens.",
+  "DLSA": "District Legal Services Authority: Local district branch of NALSA offering free advocates and legal aid clinics.",
+  "Lok Adalat": "People's Court: An alternative dispute resolution forum where pending or pre-litigation disputes are settled amicably without court fees.",
+  "POCSO": "Protection of Children from Sexual Offences Act 2012: Special legislation safeguarding minors under 18 from abuse and exploitation.",
+  "POSH": "Prevention of Sexual Harassment at Workplace Act 2013: Requires Internal Complaints Committees (ICC) in workplaces with 10+ staff.",
+  "RTI": "Right to Information Act 2005: Enforceable right enabling citizens to request official records from public authorities within 30 days.",
+  "PIO": "Public Information Officer: Designated official inside government bodies legally required to process and answer RTI applications."
+};
+
+const QUICK_QUESTIONS = [
+  { emoji: '🚔', text: 'Rights when arrested by police' },
+  { emoji: '🏠', text: 'Illegal eviction by landlord' },
+  { emoji: '💻', text: 'Report online fraud / cybercrime' },
+  { emoji: '👩‍⚖️', text: 'Get free legal aid / lawyer' },
+  { emoji: '📋', text: 'How to file RTI application' },
+  { emoji: '🛒', text: 'Consumer complaint process' },
+];
+
+// ── Init ─────────────────────────────────────────────────────────
+
+async function init() {
+  checkHealth();
+  loadCategories();
+  loadSampleQuestions();
+  renderQuickCards();
+}
+
+async function checkHealth() {
+  const dot = document.getElementById('statusDot');
+  const txt = document.getElementById('statusText');
+  try {
+    const res = await fetch(`${API_BASE}/health`);
+    if (res.ok) {
+      const data = await res.json();
+      dot.style.background = '#22c55e';
+      txt.textContent = `Online · ${data.model}`;
+    } else {
+      throw new Error();
+    }
+  } catch {
+    dot.style.background = '#ef4444';
+    txt.textContent = 'Offline — Check server';
+  }
+}
+
+async function loadCategories() {
+  try {
+    const res = await fetch(`${API_BASE}/categories`);
+    const data = await res.json();
+    const el = document.getElementById('categoriesList');
+    if (!el || !data.categories) return;
+    el.innerHTML = data.categories.map((c, idx) => `
+      <button type="button" class="category-btn" data-cat-idx="${idx}">
+        <span class="cat-emoji" style="pointer-events:none;">${c.emoji}</span>
+        <span style="pointer-events:none;">${c.name}</span>
+      </button>
+    `).join('');
+    el.onclick = function(e) {
+      const btn = e.target.closest('.category-btn');
+      if (!btn) return;
+      const idx = parseInt(btn.getAttribute('data-cat-idx'), 10);
+      if (!isNaN(idx) && data.categories[idx]) {
+        askAboutCategory(data.categories[idx].name);
+      }
+    };
+  } catch {}
+}
+
+async function loadSampleQuestions() {
+  try {
+    const res = await fetch(`${API_BASE}/sample-questions`);
+    const data = await res.json();
+    const el = document.getElementById('sampleQuestions');
+    if (!el || !data.questions) return;
+    el.innerHTML = data.questions.map((q, idx) => `
+      <button type="button" class="sample-q" data-idx="${idx}">${q}</button>
+    `).join('');
+    el.onclick = function(e) {
+      const btn = e.target.closest('.sample-q');
+      if (!btn) return;
+      const idx = parseInt(btn.getAttribute('data-idx'), 10);
+      if (!isNaN(idx) && data.questions[idx]) {
+        askQuestion(data.questions[idx]);
+        if (window.innerWidth <= 1024) toggleSidebar();
+      }
+    };
+  } catch {}
+}
+
+function renderQuickCards() {
+  const el = document.getElementById('quickCards');
+  if (!el) return;
+  el.innerHTML = QUICK_QUESTIONS.map((q, idx) => `
+    <button type="button" class="quick-card" data-qindex="${idx}">
+      <span class="card-emoji" style="pointer-events: none;">${q.emoji}</span>
+      <span class="card-text" style="pointer-events: none;">${q.text}</span>
+    </button>
+  `).join('');
+  
+  el.onclick = function(e) {
+    const card = e.target.closest('.quick-card');
+    if (!card) return;
+    const idx = parseInt(card.getAttribute('data-qindex'), 10);
+    if (!isNaN(idx) && QUICK_QUESTIONS[idx]) {
+      askQuestion(QUICK_QUESTIONS[idx].text);
+    }
+  };
+}
+
+function askQuestion(text) {
+  const input = document.getElementById('userInput');
+  if (!input) return;
+  input.value = text;
+  autoResize(input);
+  sendMessage();
+}
+
+function askAboutCategory(category) {
+  askQuestion(`Tell me about ${category} laws in India and my rights`);
+  if (window.innerWidth <= 1024) toggleSidebar();
+}
+
+function hideWelcome() {
+  const ws = document.getElementById('welcomeScreen');
+  if (ws) ws.remove();
+}
+
+function handleKeyDown(e) {
+  if (e.key === 'Enter' && !e.shiftKey) {
+    e.preventDefault();
+    sendMessage();
+  }
+}
+
+function autoResize(el) {
+  el.style.height = 'auto';
+  el.style.height = Math.min(el.scrollHeight, 130) + 'px';
+}
+
+async function sendMessage() {
+  const input = document.getElementById('userInput');
+  const text = input.value.trim();
+  if (!text || isLoading) return;
+
+  hideWelcome();
+  input.value = '';
+  input.style.height = 'auto';
+  isLoading = true;
+  document.getElementById('sendBtn').disabled = true;
+
+  // Add user message
+  appendMessage('user', text);
+  chatHistory.push({ role: 'user', content: text });
+
+  // Show typing indicator
+  const typingId = showTyping();
+
+  try {
+    const res = await fetch(`${API_BASE}/chat`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        message: text,
+        history: chatHistory.slice(-8),
+        user_id: currentUserId,
+        target_language: selectedLanguage,
+        complexity_level: selectedLevel
+      })
+    });
+
+    removeTyping(typingId);
+
+    if (!res.ok) {
+      const err = await res.json();
+      appendMessage('bot', `❌ Error: ${err.detail || 'Something went wrong. Please try again.'}`, []);
+      return;
+    }
+
+    const data = await res.json();
+    appendMessage('bot', data.answer, data.sources);
+    chatHistory.push({ role: 'assistant', content: data.answer });
+
+  } catch (err) {
+    removeTyping(typingId);
+    appendMessage('bot', '❌ Could not connect to the server. Please make sure the backend is running on port 8000.', []);
+  } finally {
+    isLoading = false;
+    document.getElementById('sendBtn').disabled = false;
+    input.focus();
+  }
+}
+
+function appendMessage(role, content, sources = []) {
+  const msgs = document.getElementById('messages');
+  const div = document.createElement('div');
+  div.className = `msg ${role}`;
+
+  const avatar = role === 'user'
+    ? '<div class="avatar">👤</div>'
+    : '<div class="avatar">⚖️</div>';
+
+  const formattedContent = formatContent(content);
+
+  let sourcesHtml = '';
+  if (sources && sources.length > 0) {
+    const uniqueSources = [...new Map(sources.map(s => [s.source, s])).values()];
+    sourcesHtml = `<div class="sources">${
+      uniqueSources.map(s => `<span class="source-tag">📚 ${s.source} <span class="cat-label">· ${s.category}</span></span>`).join('')
+    }</div>`;
+  }
+  let actionsHtml = '';
+  if (role === 'bot') {
+    actionsHtml = `
+      <div class="msg-actions">
+        <button type="button" class="btn-tts" onclick="toggleReadAloud(this)">🔊 Read Aloud</button>
+        <div class="feedback-group">
+          <span style="font-size:10px;color:var(--text-muted);margin-right:2px;">Helpful?</span>
+          <button type="button" class="btn-fb" onclick="submitFeedback(this, 'thumbs_up')" title="Accurate & helpful">👍</button>
+          <button type="button" class="btn-fb" onclick="submitFeedback(this, 'thumbs_down')" title="Too repetitive or unhelpful">👎</button>
+        </div>
+      </div>
+    `;
+  }
+
+  div.innerHTML = `
+    ${role === 'user' ? '' : avatar}
+    <div class="bubble">
+      ${formattedContent}
+      ${sourcesHtml}
+      ${actionsHtml}
+    </div>
+    ${role === 'user' ? avatar : ''}
+  `;
+
+  msgs.appendChild(div);
+  msgs.scrollTop = msgs.scrollHeight;
+}
+
+function formatContent(text) {
+  // Normalize newlines
+  const lines = text.replace(/\r\n/g, '\n').split('\n');
+  let html = '';
+  let inList = false;
+  let inCard = false;
+
+  let cardIndex = 0;
+
+  for (let line of lines) {
+    const trimmed = line.trim();
+
+    // Check for H2 or H3 headers
+    const headerMatch = trimmed.match(/^#{2,3}\s+(.+)$/);
+    if (headerMatch) {
+      if (inList) { html += '</ul>'; inList = false; }
+      if (inCard) { html += '</div>'; inCard = false; }
+
+      const title = headerMatch[1];
+      let cardType = 'legal-card';
+      if (title.includes('⚠️') || title.toLowerCase().includes('disclaimer')) {
+        cardType += ' warning-card';
+      } else if (title.includes('📞') || title.toLowerCase().includes('helpline')) {
+        cardType += ' helpline-card';
+      } else if (title.includes('🛡️') || title.toLowerCase().includes('rights')) {
+        cardType += ' rights-card';
+      }
+
+      // Stagger animation delay: 0.1s, 0.22s, 0.34s, 0.46s...
+      const delay = (cardIndex * 0.12).toFixed(2);
+      cardIndex++;
+
+      html += `<div class="${cardType}" style="animation-delay: ${delay}s;"><div class="legal-card-title">${title}</div>`;
+      inCard = true;
+      continue;
+    }
+
+    // Check for bullets
+    const bulletMatch = trimmed.match(/^[-*]\s+(.+)$/);
+    if (bulletMatch) {
+      if (!inList) { html += '<ul>'; inList = true; }
+      let item = bulletMatch[1]
+        .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
+        .replace(/\*(.+?)\*/g, '<em>$1</em>');
+      item = annotateLegalTerms(item);
+      html += `<li>${item}</li>`;
+      continue;
+    } else if (inList && trimmed === '') {
+      html += '</ul>';
+      inList = false;
+      continue;
+    }
+
+    // Empty line
+    if (!trimmed) {
+      continue;
+    }
+
+    // Regular paragraph inside or outside card
+    let formattedLine = trimmed
+      .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
+      .replace(/\*\*(.+?)\*/g, '<em>$1</em>');
+    formattedLine = annotateLegalTerms(formattedLine);
+
+    html += `<p>${formattedLine}</p>`;
+  }
+
+  if (inList) html += '</ul>';
+  if (inCard) html += '</div>';
+
+  return html || '<p>' + text + '</p>';
+}
+
+// Function to attach hover definitions to legal terminology
+function annotateLegalTerms(text) {
+  let result = text;
+  for (const [term, def] of Object.entries(LEGAL_GLOSSARY)) {
+    // Escape special regex characters in terms (like Article 21, etc.)
+    const escapedTerm = term.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    const regex = new RegExp(`\\b(${escapedTerm})\\b`, 'gi');
+    result = result.replace(regex, (match) => {
+      return `<span class="legal-term" tabindex="0">${match}<span class="term-tooltip"><strong>${term}:</strong> ${def}</span></span>`;
+    });
+  }
+  return result;
+}
+
+let typingCounter = 0;
+function showTyping() {
+  const id = 'typing-' + (++typingCounter);
+  const msgs = document.getElementById('messages');
+  const div = document.createElement('div');
+  div.className = 'msg bot';
+  div.id = id;
+  div.innerHTML = `
+    <div class="avatar">⚖️</div>
+    <div class="bubble">
+      <div class="typing-dots">
+        <span></span><span></span><span></span>
+      </div>
+    </div>
+  `;
+  msgs.appendChild(div);
+  msgs.scrollTop = msgs.scrollHeight;
+  return id;
+}
+
+function removeTyping(id) {
+  const el = document.getElementById(id);
+  if (el) el.remove();
+}
+
+function newChat() {
+  chatHistory = [];
+  const msgs = document.getElementById('messages');
+  msgs.innerHTML = `
+    <div class="welcome" id="welcomeScreen">
+      <div class="welcome-icon">🏛️</div>
+      <h2>Namaste! I'm VakilBot</h2>
+      <p>Your AI-powered Indian legal assistant. I can help you understand your rights, explain laws, and guide you through legal processes — all based on publicly available Indian law.</p>
+
+      <!-- Complexity Level Selection Tabs -->
+      <div class="level-container">
+        <div class="level-label">Select Your Knowledge Level:</div>
+        <div class="level-tabs" role="tablist">
+          <button type="button" class="level-tab active" data-level="new" onclick="selectLevel('new')" title="Plain words, everyday analogies, no legal jargon">
+            🌱 New <span class="tab-long">to Law</span>
+          </button>
+          <button type="button" class="level-tab" data-level="intermediate" onclick="selectLevel('intermediate')" title="Standard procedures, practical rights and filing steps">
+            ⚖️ <span class="tab-short">Medium</span><span class="tab-long">Intermediate</span>
+          </button>
+          <button type="button" class="level-tab" data-level="expert" onclick="selectLevel('expert')" title="Statutory sections, case precedents and judicial definitions">
+            🎓 Expert <span class="tab-long">/ Adv.</span>
+          </button>
+        </div>
+      </div>
+
+      <div class="quick-cards" id="quickCards"></div>
+    </div>
+  `;
+  renderQuickCards();
+  restoreLevelSetting();
+  closeTermSheet();
+}
+
+// ── Sidebar & Responsive Drawers ─────────────────────────────────
+
+function toggleSidebar() {
+  const sb = document.getElementById('sidebar');
+  const ov = document.getElementById('overlay');
+  if (sb) sb.classList.toggle('open');
+  if (ov) ov.classList.toggle('show');
+  closeTermSheet();
+  closeMobileSettings();
+}
+
+function toggleMobileSettings() {
+  const sheet = document.getElementById('mobileSettingsSheet');
+  const overlay = document.getElementById('mobileSettingsOverlay');
+  if (!sheet) return;
+  const isOpen = sheet.classList.contains('open');
+  if (isOpen) {
+    sheet.classList.remove('open');
+    if (overlay) overlay.classList.remove('show');
+  } else {
+    const sel = document.getElementById('mobileLangSelect');
+    if (sel) sel.value = selectedLanguage || 'en';
+    sheet.classList.add('open');
+    if (overlay) overlay.classList.add('show');
+  }
+}
+
+function closeMobileSettings() {
+  const sheet = document.getElementById('mobileSettingsSheet');
+  const overlay = document.getElementById('mobileSettingsOverlay');
+  if (sheet) sheet.classList.remove('open');
+  if (overlay) overlay.classList.remove('show');
+}
+
+// ── Mobile Touch Legal Terminology Sheet ─────────────────────────
+
+function showTermSheet(term, def) {
+  const sheet = document.getElementById('termSheet');
+  const title = document.getElementById('termSheetTitle');
+  const body = document.getElementById('termSheetDef');
+  if (sheet && title && body) {
+    title.textContent = term;
+    body.textContent = def;
+    sheet.classList.add('open');
+  }
+}
+
+function closeTermSheet() {
+  const sheet = document.getElementById('termSheet');
+  if (sheet) sheet.classList.remove('open');
+}
+
+// ── Voice Integration (STT & TTS) ────────────────────────────────
+
+let recognition = null;
+let isRecording = false;
+
+// Initialize SpeechRecognition if supported
+const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+if (SpeechRecognition) {
+  recognition = new SpeechRecognition();
+  recognition.continuous = false;
+  recognition.interimResults = true;
+  // Support English with Indian accent / Hindi
+  recognition.lang = 'en-IN';
+
+  recognition.onstart = function() {
+    isRecording = true;
+    const mic = document.getElementById('micBtn');
+    if (mic) mic.classList.add('recording');
+    const input = document.getElementById('userInput');
+    if (input) input.placeholder = 'Listening... Speak your legal query now';
+  };
+
+  recognition.onresult = function(event) {
+    let transcript = '';
+    for (let i = event.resultIndex; i < event.results.length; ++i) {
+      transcript += event.results[i][0].transcript;
+    }
+    const input = document.getElementById('userInput');
+    if (input && transcript) {
+      input.value = transcript;
+      autoResize(input);
+    }
+  };
+
+  recognition.onerror = function(event) {
+    console.warn('Speech recognition error:', event.error);
+    stopSpeechRecognition();
+  };
+
+  recognition.onend = function() {
+    stopSpeechRecognition();
+    const input = document.getElementById('userInput');
+    if (input && input.value.trim().length > 0) {
+      // Auto-send voice queries for a hands-free conversational experience
+      setTimeout(() => {
+        sendMessage();
+      }, 400);
+    }
+  };
+} else {
+  // If browser doesn't support Web Speech API, hide mic button or alert on click
+  const mic = document.getElementById('micBtn');
+  if (mic) {
+    mic.title = 'Speech recognition not supported in this browser';
+  }
+}
+
+function toggleSpeechRecognition() {
+  if (!recognition) {
+    alert('Voice input is supported in Google Chrome, Edge, and Safari on desktop and mobile.');
+    return;
+  }
+  if (isRecording) {
+    recognition.stop();
+  } else {
+    try {
+      recognition.start();
+    } catch (e) {
+      console.error(e);
+    }
+  }
+}
+
+function stopSpeechRecognition() {
+  isRecording = false;
+  const mic = document.getElementById('micBtn');
+  if (mic) mic.classList.remove('recording');
+  const input = document.getElementById('userInput');
+  if (input) input.placeholder = "Ask your legal question in English or Hindi (e.g., 'What are my rights if police arrests me?')";
+}
+
+// ── Text-to-Speech (Read Aloud) ───────────────────────────────────
+
+let currentUtterance = null;
+let activeTtsBtn = null;
+
+function toggleReadAloud(btn) {
+  if (!window.speechSynthesis) {
+    alert('Audio playback is not supported by your browser.');
+    return;
+  }
+
+  // If already speaking the current card, cancel/pause
+  if (window.speechSynthesis.speaking && activeTtsBtn === btn) {
+    window.speechSynthesis.cancel();
+    btn.classList.remove('speaking');
+    btn.innerHTML = '🔊 Read Aloud';
+    activeTtsBtn = null;
+    return;
+  }
+
+  // Cancel any ongoing speech
+  window.speechSynthesis.cancel();
+  if (activeTtsBtn) {
+    activeTtsBtn.classList.remove('speaking');
+    activeTtsBtn.innerHTML = '🔊 Read Aloud';
+  }
+
+  // Extract plain readable text from the parent bubble
+  const bubble = btn.closest('.bubble');
+  if (!bubble) return;
+
+  // Clone bubble and remove buttons/sources for clean narration
+  const clone = bubble.cloneNode(true);
+  const toRemove = clone.querySelectorAll('.sources, .btn-tts');
+  toRemove.forEach(el => el.remove());
+  const readableText = clone.innerText.trim();
+
+  if (!readableText) return;
+
+  currentUtterance = new SpeechSynthesisUtterance(readableText);
+  currentUtterance.rate = 0.98; // Slightly measured pace for legal comprehension
+  currentUtterance.pitch = 1.0;
+
+  // Match TTS voice to currently selected language
+  const targetLangCode = SPEECH_LANG_CODES[selectedLanguage] || 'en-IN';
+  currentUtterance.lang = targetLangCode;
+
+  const voices = window.speechSynthesis.getVoices();
+  const matchedVoice = voices.find(v => v.lang.startsWith(selectedLanguage) || v.lang.startsWith(targetLangCode.substring(0, 2)));
+  if (matchedVoice) {
+    currentUtterance.voice = matchedVoice;
+  }
+
+  currentUtterance.onstart = function() {
+    btn.classList.add('speaking');
+    btn.innerHTML = '⏹️ Stop Reading';
+    activeTtsBtn = btn;
+  };
+
+  currentUtterance.onend = function() {
+    btn.classList.remove('speaking');
+    btn.innerHTML = '🔊 Read Aloud';
+    activeTtsBtn = null;
+  };
+
+  currentUtterance.onerror = function() {
+    btn.classList.remove('speaking');
+    btn.innerHTML = '🔊 Read Aloud';
+    activeTtsBtn = null;
+  };
+
+  window.speechSynthesis.speak(currentUtterance);
+}
+
+// ── Continuous Learning Feedback ──────────────────────────────────
+
+async function submitFeedback(btn, feedbackType) {
+  const group = btn.closest('.feedback-group');
+  if (!group) return;
+  const bubble = btn.closest('.bubble');
+  const answerText = bubble ? bubble.innerText : '';
+
+  // Highlight selection
+  group.querySelectorAll('.btn-fb').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+
+  // Find corresponding user query from previous message
+  const msgs = Array.from(document.querySelectorAll('.msg'));
+  const currentMsg = btn.closest('.msg');
+  const idx = msgs.indexOf(currentMsg);
+  let userQuery = '';
+  if (idx > 0 && msgs[idx - 1].classList.contains('user')) {
+    userQuery = msgs[idx - 1].querySelector('.bubble').innerText.trim();
+  }
+
+  try {
+    await fetch(`${API_BASE}/feedback`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        query: userQuery,
+        answer: answerText,
+        feedback: feedbackType,
+        user_id: currentUserId
+      })
+    });
+    const label = group.querySelector('span');
+    if (label) {
+      label.innerText = 'Thanks for your feedback!';
+      label.style.color = '#22c55e';
+    }
+  } catch (err) {
+    console.warn('Could not record feedback:', err);
+  }
+}
+
+// ── Multilingual & Accessibility Controls ────────────────────────
+
+const SPEECH_LANG_CODES = {
+  en: 'en-IN',
+  hi: 'hi-IN',
+  ta: 'ta-IN',
+  te: 'te-IN',
+  bn: 'bn-IN',
+  mr: 'mr-IN',
+  gu: 'gu-IN',
+  kn: 'kn-IN',
+  ml: 'ml-IN',
+  pa: 'pa-IN',
+  es: 'es-ES',
+  fr: 'fr-FR',
+  de: 'de-DE',
+  ar: 'ar-SA',
+  ru: 'ru-RU',
+  zh: 'zh-CN'
+};
+
+function onLanguageChange(lang) {
+  selectedLanguage = lang;
+  localStorage.setItem('vakilbot_lang', lang);
+
+  // Sync mobile badge and select dropdowns
+  const badge = document.getElementById('mobileLangBadge');
+  if (badge) badge.textContent = (lang || 'en').toUpperCase();
+
+  const sel1 = document.getElementById('langSelect');
+  const sel2 = document.getElementById('mobileLangSelect');
+  if (sel1 && sel1.value !== lang) sel1.value = lang;
+  if (sel2 && sel2.value !== lang) sel2.value = lang;
+
+  // Update speech recognition locale
+  if (recognition) {
+    recognition.lang = SPEECH_LANG_CODES[lang] || 'en-IN';
+  }
+
+  // Update input placeholder in chosen language
+  const input = document.getElementById('userInput');
+  if (input) {
+    if (lang === 'hi') input.placeholder = 'अपना कानूनी सवाल हिंदी में पूछें (उदा. पुलिस गिरफ्तारी में अधिकार)...';
+    else if (lang === 'ta') input.placeholder = 'உங்கள் சட்டக் கேள்வியை இங்கே கேளுங்கள்...';
+    else if (lang === 'te') input.placeholder = 'మీ చట్టపరమైన ప్రశ్నను ఇక్కడ అడగండి...';
+    else if (lang === 'bn') input.placeholder = 'আপনার আইনি প্রশ্ন এখানে জিজ্ঞাসা করুন...';
+    else if (lang === 'mr') input.placeholder = 'तुमचा कायदेशीर प्रश्न येथे विचारा...';
+    else if (lang === 'gu') input.placeholder = 'તમારો કાનૂની પ્રશ્ન અહીં પૂછો...';
+    else if (lang === 'es') input.placeholder = 'Haga su pregunta legal aquí...';
+    else if (lang === 'fr') input.placeholder = 'Posez votre question juridique ici...';
+    else if (lang === 'de') input.placeholder = 'Stellen Sie hier Ihre rechtliche Frage...';
+    else input.placeholder = "Ask your legal question in English or any language (e.g., 'What are my rights if police arrests me?')";
+  }
+}
+
+// Restore saved language selection on load
+function restoreLanguageSetting() {
+  const select = document.getElementById('langSelect');
+  const mobileSelect = document.getElementById('mobileLangSelect');
+  if (selectedLanguage) {
+    if (select) select.value = selectedLanguage;
+    if (mobileSelect) mobileSelect.value = selectedLanguage;
+    onLanguageChange(selectedLanguage);
+  }
+}
+
+// Accessibility: Font Size Scaler
+let currentFontSizeLevel = 0; // 0: Normal, 1: Large (+15%), 2: Extra Large (+35%)
+function cycleFontSize() {
+  currentFontSizeLevel = (currentFontSizeLevel + 1) % 3;
+  document.body.classList.remove('font-large', 'font-xlarge');
+  if (currentFontSizeLevel === 1) {
+    document.body.classList.add('font-large');
+  } else if (currentFontSizeLevel === 2) {
+    document.body.classList.add('font-xlarge');
+  }
+}
+
+// Accessibility: High Contrast Mode
+function toggleHighContrast() {
+  document.body.classList.toggle('theme-high-contrast');
+  const isHighContrast = document.body.classList.contains('theme-high-contrast');
+  localStorage.setItem('vakilbot_high_contrast', isHighContrast ? '1' : '0');
+}
+
+// Accessibility: Dyslexia-Friendly Font
+function toggleDyslexicFont() {
+  document.body.classList.toggle('dyslexic-font');
+  const isDyslexic = document.body.classList.contains('dyslexic-font');
+  localStorage.setItem('vakilbot_dyslexic_font', isDyslexic ? '1' : '0');
+}
+
+function restoreAccessibilitySettings() {
+  if (localStorage.getItem('vakilbot_high_contrast') === '1') {
+    document.body.classList.add('theme-high-contrast');
+  }
+  if (localStorage.getItem('vakilbot_dyslexic_font') === '1') {
+    document.body.classList.add('dyslexic-font');
+  }
+}
+
+// ── Level Selector Tab Handlers ─────────────────────────────────
+
+function selectLevel(lvl) {
+  selectedLevel = lvl;
+  localStorage.setItem('vakilbot_level', lvl);
+
+  // Update tab visual states
+  document.querySelectorAll('.level-tab').forEach(tab => {
+    if (tab.getAttribute('data-level') === lvl) {
+      tab.classList.add('active');
+    } else {
+      tab.classList.remove('active');
+    }
+  });
+}
+
+function restoreLevelSetting() {
+  const saved = localStorage.getItem('vakilbot_level') || 'new';
+  selectLevel(saved);
+}
+
+function setupTermSheetTouch() {
+  const msgs = document.getElementById('messages');
+  if (!msgs) return;
+  msgs.addEventListener('click', (e) => {
+    const termEl = e.target.closest('.legal-term');
+    if (termEl) {
+      const tooltip = termEl.querySelector('.term-tooltip');
+      const fullText = tooltip ? tooltip.textContent : '';
+      const parts = fullText.split(': ');
+      const termName = parts[0] || termEl.textContent.trim();
+      const defText = parts.slice(1).join(': ') || fullText;
+      if (window.innerWidth <= 768 && defText) {
+        showTermSheet(termName, defText);
+      }
+    }
+  });
+}
+
+// ── Start ────────────────────────────────────────────────────────
+async function startApp() {
+  restoreLanguageSetting();
+  restoreAccessibilitySettings();
+  restoreLevelSetting();
+  setupTermSheetTouch();
+  await init();
+}
+
+startApp();
+</script>
+</body>
+</html>
