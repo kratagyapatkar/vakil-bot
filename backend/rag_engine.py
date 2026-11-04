@@ -1,65 +1,41 @@
 """
 RAG (Retrieval-Augmented Generation) Engine
-Uses ChromaDB vector store + Google Gemini for legal Q&A
+Uses a lightweight in-memory retriever + Google Gemini API directly.
+No langchain/chromadb — fits within Vercel's 500 MB function bundle limit.
 """
 
 import os
 from typing import List, Optional
-from langchain_google_genai import ChatGoogleGenerativeAI, GoogleGenerativeAIEmbeddings
-from langchain_core.documents import Document
-from langchain_core.prompts import ChatPromptTemplate
-from langchain_core.output_parsers import StrOutputParser
-from langchain_core.runnables import RunnablePassthrough
+import google.generativeai as genai
 from dotenv import load_dotenv
 
 try:
-    from langchain_community.vectorstores import Chroma  # type: ignore[import]
-    HAS_CHROMA = True
+    # Only attempt langchain imports in non-Vercel local dev
+    if not os.environ.get("VERCEL"):
+        from langchain_google_genai import ChatGoogleGenerativeAI, GoogleGenerativeAIEmbeddings
+        from langchain_core.documents import Document
+        from langchain_core.prompts import ChatPromptTemplate
+        from langchain_core.output_parsers import StrOutputParser
+        from langchain_community.vectorstores import Chroma
+        HAS_LANGCHAIN = True
+        HAS_CHROMA = True
+    else:
+        raise ImportError("Vercel env — skip langchain")
 except Exception:
-    Chroma = None
+    HAS_LANGCHAIN = False
     HAS_CHROMA = False
-
-# On Vercel serverless, always use the lightweight in-memory retriever
-if os.environ.get("VERCEL"):
-    HAS_CHROMA = False
+    # Minimal Document stand-in
+    class Document:  # type: ignore[no-redef]
+        def __init__(self, page_content: str, metadata: dict = None):
+            self.page_content = page_content
+            self.metadata = metadata or {}
 
 from knowledge_base import build_documents
 
 load_dotenv()
 
-if os.environ.get("VERCEL"):
-    CHROMA_DB_PATH = os.path.join("/tmp", "chroma_db")
-else:
-    CHROMA_DB_PATH = os.path.join(os.path.dirname(__file__), "..", "data", "chroma_db")
-
-
-class InMemoryLegalRetriever:
-    """Lightweight in-memory retriever for serverless/Vercel environments without ChromaDB."""
-
-    def __init__(self, documents: List[Document]):
-        self.documents = documents
-
-    def invoke(self, query: str) -> List[Document]:
-        query_words = set(query.lower().split())
-        scored = []
-        for doc in self.documents:
-            content_lower = doc.page_content.lower()
-            category = doc.metadata.get("category", "").lower()
-            tags = [t.lower() for t in doc.metadata.get("tags", [])]
-            score = 0
-            for w in query_words:
-                if len(w) <= 2:
-                    continue
-                if w in content_lower:
-                    score += 2
-                if w in category:
-                    score += 4
-                for t in tags:
-                    if w in t:
-                        score += 5
-            scored.append((score, doc))
-        scored.sort(key=lambda x: x[0], reverse=True)
-        return [doc for _, doc in scored[:4]]
+CHROMA_DB_PATH = os.path.join("/tmp", "chroma_db") if os.environ.get("VERCEL") else \
+    os.path.join(os.path.dirname(__file__), "..", "data", "chroma_db")
 
 LANGUAGE_NAMES = {
     "en": "English",
@@ -101,9 +77,10 @@ CRITICAL INTELLIGENCE & ANTI-REPETITION RULES:
    - ### 🛡️ Your Rights & Protections
    - ### 📝 Practical Steps You Can Take
    - ### 📞 Important Helplines & Portals (if applicable)
-   - ### ⚠️ Important Disclaimer (brief note to consult an advocate)
+   - ### ⚠️ Important Disclaimer
 5. Use standard markdown headers (`### `) for main categories.
 6. Emphasize key terms with bold text and use bullet points for lists.
+7. ALWAYS end with: "⚠️ **Disclaimer**: This is general legal information, not legal advice. Please consult a qualified advocate for your specific situation. Free legal aid: [NALSA](https://nalsa.gov.in) | Helpline: 15100"
 
 LEARNED COLLECTIVE INSIGHTS:
 {learned_insights}
@@ -122,76 +99,88 @@ USER QUESTION: {question}
 Provide an insightful, nuanced response in {target_language} following the structured format without repeating previous statements:"""
 
 
+class InMemoryLegalRetriever:
+    """Lightweight in-memory retriever — no external dependencies."""
+
+    def __init__(self, documents: List):
+        self.documents = documents
+
+    def invoke(self, query: str) -> List:
+        query_words = set(query.lower().split())
+        scored = []
+        for doc in self.documents:
+            content_lower = doc.page_content.lower()
+            category = doc.metadata.get("category", "").lower()
+            tags = [t.lower() for t in doc.metadata.get("tags", [])]
+            score = 0
+            for w in query_words:
+                if len(w) <= 2:
+                    continue
+                if w in content_lower:
+                    score += 2
+                if w in category:
+                    score += 4
+                for t in tags:
+                    if w in t:
+                        score += 5
+            scored.append((score, doc))
+        scored.sort(key=lambda x: x[0], reverse=True)
+        return [doc for _, doc in scored[:4]]
+
+
 class LegalRAGEngine:
     def __init__(self):
         self.api_key = os.getenv("GEMINI_API_KEY")
         if not self.api_key:
             raise ValueError("GEMINI_API_KEY not found in environment variables")
 
-        self.llm = ChatGoogleGenerativeAI(
-            model="gemini-2.5-flash",
-            google_api_key=self.api_key,
-            temperature=0.3,
-            max_output_tokens=2048,
-        )
+        genai.configure(api_key=self.api_key)
+        self._model = genai.GenerativeModel("gemini-2.5-flash")
 
-        self.embeddings = GoogleGenerativeAIEmbeddings(
-            model="models/gemini-embedding-001",
-            google_api_key=self.api_key,
-        )
-
-        self.vectorstore: Optional[Chroma] = None
+        self.vectorstore = None
         self.retriever = None
-        self._initialize_vectorstore()
+        self._initialize_retriever()
 
-    def _initialize_vectorstore(self):
-        """Initialize ChromaDB or fallback to in-memory retriever for Vercel/serverless."""
+    def _initialize_retriever(self):
+        """Always use in-memory retriever on Vercel; optionally ChromaDB locally."""
         documents = build_documents()
 
-        if not HAS_CHROMA or Chroma is None:
-            print("[INFO] ChromaDB not available. Using high-efficiency in-memory legal retriever...")
-            self.vectorstore = None
-            self.retriever = InMemoryLegalRetriever(documents)
-            return
-
-        try:
-            os.makedirs(CHROMA_DB_PATH, exist_ok=True)
-            # Check if DB already exists
-            if os.path.exists(os.path.join(CHROMA_DB_PATH, "chroma.sqlite3")):
-                print("[INFO] Loading existing vector store...")
-                self.vectorstore = Chroma(
-                    persist_directory=CHROMA_DB_PATH,
-                    embedding_function=self.embeddings,
-                    collection_name="indian_legal_kb"
+        if HAS_CHROMA and not os.environ.get("VERCEL"):
+            try:
+                from langchain_google_genai import GoogleGenerativeAIEmbeddings
+                from langchain_community.vectorstores import Chroma as ChromaStore
+                embeddings = GoogleGenerativeAIEmbeddings(
+                    model="models/gemini-embedding-001",
+                    google_api_key=self.api_key,
                 )
-            else:
-                print("[INFO] Building new vector store from legal knowledge base...")
-                self.vectorstore = Chroma.from_documents(
-                    documents=documents,
-                    embedding=self.embeddings,
-                    persist_directory=CHROMA_DB_PATH,
-                    collection_name="indian_legal_kb"
+                os.makedirs(CHROMA_DB_PATH, exist_ok=True)
+                if os.path.exists(os.path.join(CHROMA_DB_PATH, "chroma.sqlite3")):
+                    print("[INFO] Loading existing ChromaDB vector store...")
+                    self.vectorstore = ChromaStore(
+                        persist_directory=CHROMA_DB_PATH,
+                        embedding_function=embeddings,
+                        collection_name="indian_legal_kb"
+                    )
+                else:
+                    print("[INFO] Building new ChromaDB vector store...")
+                    self.vectorstore = ChromaStore.from_documents(
+                        documents=documents,
+                        embedding=embeddings,
+                        persist_directory=CHROMA_DB_PATH,
+                        collection_name="indian_legal_kb"
+                    )
+                self.retriever = self.vectorstore.as_retriever(
+                    search_type="similarity", search_kwargs={"k": 4}
                 )
-                print(f"[INFO] Vector store built with {len(documents)} documents")
+                print(f"[INFO] ChromaDB ready with {len(documents)} documents")
+                return
+            except Exception as e:
+                print(f"[WARN] ChromaDB failed: {e}. Falling back to in-memory retriever.")
 
-            self.retriever = self.vectorstore.as_retriever(
-                search_type="similarity",
-                search_kwargs={"k": 4}
-            )
-        except Exception as e:
-            print(f"[WARN] ChromaDB initialization failed: {e}. Falling back to in-memory retriever...")
-            self.vectorstore = None
-            self.retriever = InMemoryLegalRetriever(documents)
+        print("[INFO] Using lightweight in-memory legal retriever.")
+        self.retriever = InMemoryLegalRetriever(documents)
 
-    def refresh_knowledge_base(self):
-        """Rebuild the vector store from scratch."""
-        import shutil
-        if os.path.exists(CHROMA_DB_PATH):
-            shutil.rmtree(CHROMA_DB_PATH)
-        self._initialize_vectorstore()
-
-    def _format_docs(self, docs: List[Document]) -> str:
-        """Format retrieved documents into context string."""
+    def _format_docs(self, docs: List) -> str:
         formatted = []
         for i, doc in enumerate(docs, 1):
             formatted.append(
@@ -202,7 +191,6 @@ class LegalRAGEngine:
         return "\n\n---\n\n".join(formatted)
 
     def get_relevant_sources(self, query: str) -> List[dict]:
-        """Get relevant documents for a query without generating a response."""
         docs = self.retriever.invoke(query)
         return [
             {
@@ -213,11 +201,9 @@ class LegalRAGEngine:
             for doc in docs
         ]
 
-    def answer(self, question: str, chat_history: str = "", user_id: str = "default_user", language: str = "en", level: str = "new") -> dict:
-        """
-        Generate a legal answer using RAG with continuous learning memory, multilingual output, and level-adapted framing.
-        Returns dict with 'answer' and 'sources'.
-        """
+    def answer(self, question: str, chat_history: str = "", user_id: str = "default_user",
+               language: str = "en", level: str = "new") -> dict:
+        """Generate a legal answer using RAG + Gemini API directly."""
         from memory_learning import get_learning_memory
         memory = get_learning_memory()
 
@@ -230,35 +216,26 @@ class LegalRAGEngine:
         }
         level_desc = level_descriptions.get(level.lower(), level_descriptions["new"])
 
-        # Retrieve relevant docs
         relevant_docs = self.retriever.invoke(question)
         context = self._format_docs(relevant_docs)
-
-        # Retrieve user covered topics and learned insights
         covered_topics = memory.get_user_topics_context(user_id)
         learned_insights = memory.get_learned_insights()
 
-        # Build prompt
-        prompt = ChatPromptTemplate.from_template(LEGAL_SYSTEM_PROMPT)
+        prompt = LEGAL_SYSTEM_PROMPT.format(
+            complexity_level_description=level_desc,
+            target_language=target_lang_str,
+            learned_insights=learned_insights,
+            covered_topics=covered_topics,
+            context=context,
+            chat_history=chat_history,
+            question=question
+        )
 
-        # Build chain
-        chain = prompt | self.llm | StrOutputParser()
+        response = self._model.generate_content(prompt)
+        answer_text = response.text
 
-        # Generate answer
-        answer = chain.invoke({
-            "context": context,
-            "chat_history": chat_history,
-            "covered_topics": covered_topics,
-            "learned_insights": learned_insights,
-            "complexity_level_description": level_desc,
-            "target_language": target_lang_str,
-            "question": question
-        })
+        memory.record_topic(question, answer_text, user_id)
 
-        # Save topic to learning memory so it won't repeat
-        memory.record_topic(question, answer, user_id)
-
-        # Compile sources
         sources = [
             {
                 "source": doc.metadata.get("source", "Unknown"),
@@ -267,18 +244,21 @@ class LegalRAGEngine:
             for doc in relevant_docs
         ]
 
-        return {
-            "answer": answer,
-            "sources": sources
-        }
+        return {"answer": answer_text, "sources": sources}
+
+    def refresh_knowledge_base(self):
+        """Rebuild the retriever from scratch."""
+        import shutil
+        if os.path.exists(CHROMA_DB_PATH):
+            shutil.rmtree(CHROMA_DB_PATH)
+        self._initialize_retriever()
 
 
-# Singleton instance
+# Singleton
 _engine: Optional[LegalRAGEngine] = None
 
 
 def get_rag_engine() -> LegalRAGEngine:
-    """Get or create the RAG engine singleton."""
     global _engine
     if _engine is None:
         _engine = LegalRAGEngine()
