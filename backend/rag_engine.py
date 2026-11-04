@@ -13,10 +13,14 @@ from langchain_core.runnables import RunnablePassthrough
 from dotenv import load_dotenv
 
 try:
-    from langchain_community.vectorstores import Chroma
+    from langchain_community.vectorstores import Chroma  # type: ignore[import]
     HAS_CHROMA = True
-except (ImportError, Exception):
+except Exception:
     Chroma = None
+    HAS_CHROMA = False
+
+# On Vercel serverless, always use the lightweight in-memory retriever
+if os.environ.get("VERCEL"):
     HAS_CHROMA = False
 
 from knowledge_base import build_documents
